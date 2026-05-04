@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voltera — Taller EV</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
+/* HEADER */
+.hdr{background:#0C2D6B;color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(12,45,107,.2)}
+.lm{width:32px;height:32px;background:#1E88E5;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff}
+.lt{font-size:16px;font-weight:600}.ls{font-size:11px;color:#90CAF9;margin-top:1px}
+.sp{font-size:11px;padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:6px;font-weight:500}
+.sp-ok{background:rgba(30,136,229,.25);color:#90CAF9}
+.sp-sv{background:rgba(255,193,7,.2);color:#FFD54F}
+.sp-er{background:rgba(244,67,54,.2);color:#EF9A9A}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dok{background:#64B5F6}.dsv{background:#FFD54F;animation:pulse 1s infinite}.der{background:#EF9A9A}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* SIDEBAR */
+.sb{width:200px;background:#fff;border-right:1px solid #e4e8ef;min-height:calc(100vh - 56px);position:fixed;top:56px;left:0;padding:14px 0;overflow-y:auto}
+.main{margin-left:200px;padding:22px 24px;min-height:calc(100vh - 56px)}
+.nsec{font-size:10px;color:#bbb;font-weight:600;letter-spacing:.08em;padding:12px 16px 4px;text-transform:uppercase}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:#555;border-left:3px solid transparent;transition:all .12s;user-select:none}
+.ni:hover{background:#f0f4ff;color:#0C2D6B}
+.ni.active{background:#EBF2FF;color:#0C2D6B;border-left-color:#1E88E5;font-weight:500}
+.nc{margin-left:auto;font-size:11px;background:#e8ecf4;border-radius:10px;padding:1px 7px;color:#666}
+/* LAYOUT */
+.pgt{font-size:20px;font-weight:600;margin-bottom:3px;color:#0C2D6B}
+.pgs{font-size:13px;color:#888;margin-bottom:16px}
+.card{background:#fff;border:1px solid #e4e8ef;border-radius:12px;padding:12px 16px}
+.carde{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:18px 20px;margin-bottom:14px}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.mt{background:#fff;border:1px solid #e4e8ef;border-radius:12px;padding:13px 15px}
+.ml{font-size:12px;color:#888;margin-bottom:4px}.mv{font-size:22px;font-weight:600;color:#0C2D6B}
+.mb2{border-top:3px solid #1E88E5}.mg2{border-top:3px solid #2E7D32}.ma{border-top:3px solid #F57F17}.mr2{border-top:3px solid #C62828}
+/* TABLE */
+table{width:100%;border-collapse:collapse}
+th{font-weight:500;font-size:12px;text-align:left;padding:8px 10px;color:#666;background:#f7f9fc;border-bottom:1px solid #e4e8ef}
+td{padding:8px 10px;font-size:13px;border-bottom:1px solid #f0f2f5;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.tw{border:1px solid #e4e8ef;border-radius:12px;overflow:hidden;background:#fff}
+/* FORMS */
+input,select,textarea{font-family:inherit;font-size:14px;padding:7px 10px;border-radius:8px;border:1px solid #d0d7e3;background:#fff;color:#111;width:100%;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:#1E88E5;box-shadow:0 0 0 3px rgba(30,136,229,.1)}
+textarea{resize:vertical;font-family:inherit}
+.fl{margin-bottom:10px}.fl label{display:block;font-size:12px;color:#666;margin-bottom:4px;font-weight:500}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+/* BUTTONS */
+button{font-family:inherit;font-size:13px;padding:6px 13px;border-radius:8px;border:1px solid #d0d7e3;background:#fff;color:#111;cursor:pointer;transition:all .12s}
+button:hover{background:#f0f4ff;border-color:#1E88E5;color:#0C2D6B}
+button:active{transform:scale(.98)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.bp{background:#1E88E5;color:#fff;border-color:#1E88E5}.bp:hover{background:#1565C0;border-color:#1565C0;color:#fff}
+.bs2{background:#f0f4ff;color:#0C2D6B;border-color:#B3D1F7}.bs2:hover{background:#B3D1F7}
+.be2{background:#E8F5E9;color:#1B5E20;border-color:#A5D6A7}.be2:hover{background:#A5D6A7}
+.bd2{color:#C62828;border-color:#FFCDD2;background:none}.bd2:hover{background:#FFEBEE}
+.bsm{font-size:12px;padding:4px 9px}
+.bprint{background:#6A1B9A;color:#fff;border-color:#6A1B9A;display:flex;align-items:center;gap:5px}.bprint:hover{background:#4A148C;border-color:#4A148C;color:#fff}
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(10,20,50,.55);z-index:1000;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:32px 16px}
+.mbox{background:#fff;border-radius:16px;width:100%;max-width:700px;padding:1.5rem;box-shadow:0 12px 40px rgba(0,0,0,.18);max-height:92vh;overflow-y:auto}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid #e4e8ef}
+.mtit{font-size:16px;font-weight:600;color:#0C2D6B}
+/* BADGE */
+.badge{font-size:11px;font-weight:500;padding:2px 9px;border-radius:20px;display:inline-block;white-space:nowrap}
+/* AGENDA */
+.ae{background:#EBF2FF;border-left:3px solid #1E88E5;border-radius:5px;padding:4px 7px;margin-bottom:3px;font-size:11px}
+.lostk{background:#FFF5F5!important}
+.sl2{font-size:11px;color:#888;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin:10px 0 6px}
+/* LOGIN */
+.lwrap{min-height:100vh;background:linear-gradient(135deg,#0C2D6B,#1565C0,#1E88E5);display:flex;align-items:center;justify-content:center;padding:20px}
+.lbox{background:#fff;border-radius:20px;padding:2.5rem 2rem;width:100%;max-width:360px;box-shadow:0 16px 48px rgba(0,0,0,.2)}
+.lerr{background:#FFEBEE;color:#C62828;border-radius:8px;padding:8px 12px;font-size:13px;margin-bottom:12px}
+/* HERO */
+.hero{background:linear-gradient(135deg,#0C2D6B,#1565C0,#1E88E5);border-radius:16px;padding:22px 26px;margin-bottom:20px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+/* CHART WRAP */
+.cw{background:#fff;border:1px solid #e4e8ef;border-radius:14px;padding:16px 20px}
+.ct{font-size:14px;font-weight:600;color:#0C2D6B;margin-bottom:12px}
+/* PRINT STYLES */
+@media print {
+  .hdr,.sb,.no-print{display:none!important}
+  .main{margin-left:0!important;padding:0!important}
+  .print-doc{display:block!important}
+  body{background:#fff!important;font-size:12px}
+  .mo{position:static!important;background:none!important;padding:0!important}
+  .mbox{box-shadow:none!important;max-height:none!important;border:none!important;padding:.5rem!important;max-width:100%!important}
+  button{display:none!important}
+}
+.print-doc{font-family:"Times New Roman",serif;color:#000}
+.pdoc-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0C2D6B;padding-bottom:10px;margin-bottom:14px}
+.pdoc-title{font-size:18px;font-weight:700;color:#0C2D6B;margin-bottom:2px}
+.pdoc-sub{font-size:12px;color:#555}
+.pdoc-section{margin-bottom:12px}
+.pdoc-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#0C2D6B;border-bottom:1px solid #ccc;padding-bottom:3px;margin-bottom:8px}
+.pdoc-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;font-size:13px}
+.pdoc-row{display:flex;gap:6px;margin-bottom:4px}
+.pdoc-label{color:#555;min-width:120px;font-size:12px}
+.pdoc-val{font-weight:500;font-size:12px}
+.pdoc-sign{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px}
+.pdoc-sign-box{border-top:1px solid #555;padding-top:6px;font-size:11px;color:#555;text-align:center}
+.pdoc-footer{font-size:10px;color:#888;text-align:center;margin-top:16px;border-top:1px solid #eee;padding-top:8px}
+.pdoc-total-box{background:#f7f9fc;border:1px solid #ddd;border-radius:6px;padding:10px 14px;margin-top:8px}
+.pdoc-total-line{display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px}
+.pdoc-grand{display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:#0C2D6B;margin-top:8px;padding-top:8px;border-top:2px solid #0C2D6B}
+/* ANTIGÜEDAD */
+.antiguedad-ok{color:#1B5E20;background:#E8F5E9;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.antiguedad-warn{color:#6D4C00;background:#FFF8E1;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.antiguedad-danger{color:#B71C1C;background:#FFEBEE;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+
+/* FLOTA / LEASING */
+.fl-card{background:#fff;border:1px solid #e4e8ef;border-radius:14px;padding:16px 18px;margin-bottom:12px;transition:box-shadow .15s}
+.fl-card:hover{box-shadow:0 4px 18px rgba(12,45,107,.1)}
+.fl-card-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.fl-patente{font-size:20px;font-weight:800;color:#0C2D6B;letter-spacing:.04em}
+.fl-sub{font-size:12px;color:#888;margin-top:1px}
+.fl-progress-bar{height:8px;background:#e4e8ef;border-radius:8px;overflow:hidden;margin:4px 0}
+.fl-progress-fill{height:100%;border-radius:8px;transition:width .4s}
+.fl-timeline{border-left:2px solid #B3D1F7;margin-left:10px;padding-left:16px}
+.fl-tl-dot{width:10px;height:10px;border-radius:50%;background:#1E88E5;margin-left:-21px;margin-right:8px;flex-shrink:0;border:2px solid #fff;outline:2px solid #1E88E5}
+.fl-tl-dot-ext{background:#7B1FA2;outline-color:#7B1FA2}
+.fl-tl-item{display:flex;align-items:flex-start;margin-bottom:12px;font-size:13px}
+.fl-tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #d0d7e3;background:#fff;color:#555;transition:all .12s}
+.fl-tab.active{background:#0C2D6B;color:#fff;border-color:#0C2D6B}
+.fl-kpi{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f9fc;border-radius:10px;padding:10px 14px;text-align:center;min-width:100px}
+.fl-kpi-val{font-size:22px;font-weight:700;color:#0C2D6B}
+.fl-kpi-lbl{font-size:11px;color:#888;margin-top:2px}
+.fl-kpi-warn .fl-kpi-val{color:#C62828}
+.fl-kpi-ok .fl-kpi-val{color:#2E7D32}
+.fl-dias-ok{color:#2E7D32;font-weight:600;font-size:12px}
+.fl-dias-warn{color:#F57F17;font-weight:600;font-size:12px}
+.fl-dias-danger{color:#C62828;font-weight:600;font-size:12px}
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const VEHICULOS_DB = [{"ppu": "GPZD47", "vin": "LTR72A2W8MA000147", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blue", "anio": "2022", "cliente": "FRANKLIN CASTRO CORTES", "rut": "10.208.932-4"}, {"ppu": "LPHK45", "vin": "LJNDZU5T8PN407055", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "plateado", "anio": "2022", "cliente": "AGASNAR SPA", "rut": "76.420.368-2"}, {"ppu": "LPHK47", "vin": "LMPA1JMB0PA216206", "marca": "FARIZON", "modelo": "V6E", "tipo": "Furgón", "color": "blanco", "anio": "2024", "cliente": "URBANGO SPA", "rut": "76.805.173-9"}, {"ppu": "LPHK70", "vin": "LJNDZU5T7NN041960", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Rojo", "anio": "2022", "cliente": "ALVARO TURRIETA VIELMA", "rut": "13.040.846-K"}, {"ppu": "PR0836", "vin": "LTR72A2W9MA000187", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Azul", "anio": "2022", "cliente": "Activo Fijo - Fabrian Ramon", "rut": "77.104.924-9"}, {"ppu": "PR0837", "vin": "LTR72A2W6MA000180", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "Activo Fijo - Karla Corte", "rut": "77.104.924-9"}, {"ppu": "PR0854", "vin": "LJNDZU5T3PN050559", "marca": "ZNA", "modelo": "R6 4x4", "tipo": "Camioneta", "color": "Blanco", "anio": "2023", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RPPF67", "vin": "LTR72A2W2MA000239", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "CARLOS MUSALEM CUMSILLE", "rut": "13.004.103-5"}, {"ppu": "RPPL25", "vin": "LTR72A2W3MA000248", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "CARLOS MUSALEM CUMSILLE", "rut": "13.004.103-5"}, {"ppu": "RRSY45", "vin": "LTR72A2W3MA000136", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MARCO-ANTONIO RIOS SIERRA", "rut": "16.359.854-K"}, {"ppu": "RRVF63", "vin": "LJNDZU5T5MN027828", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RRVF64", "vin": "LJNDZU5T7MN027801", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RRVH11", "vin": "LJNDZU5T8NN402354", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RRVH15", "vin": "LJNDZU5T2NN402348", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RSBP79", "vin": "LTR72A2W1MA000152", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "RENTA GRUAS SANTIAGO LIMITADA", "rut": "78.105.320-1"}, {"ppu": "RSBP80", "vin": "LTR72A2W6MA000101", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "RENTA GRUAS SANTIAGO LIMITADA", "rut": "78.105.320-1"}, {"ppu": "RSBP81", "vin": "LTR72A2W2MA000113", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "RENTA GRUAS SANTIAGO LIMITADA", "rut": "78.105.320-1"}, {"ppu": "RSBP83", "vin": "LTR72A2W4MA000131", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "RENTA GRUAS SANTIAGO LIMITADA", "rut": "78.105.320-1"}, {"ppu": "RSBP84", "vin": "LTR72A2W7MA000236", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "RENTA GRUAS SANTIAGO LIMITADA", "rut": "78.105.320-1"}, {"ppu": "RSBP86", "vin": "LTR72A2W1MA000118", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "RENTA GRUAS SANTIAGO LIMITADA", "rut": "78.105.320-1"}, {"ppu": "RSCP67", "vin": "LTR72A2WXMA000117", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "CAMILA MARIELA HERNANDEZ CONOEN", "rut": "12.879.332-1"}, {"ppu": "RSDZ27", "vin": "LTR72A2W2LA002605", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "Rojo", "anio": "2021", "cliente": "SEBASTIAN ALFONSO ROJAS ZABALAGA", "rut": "18.972.530-2"}, {"ppu": "RSHL91", "vin": "LTR72A2W7MA000141", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "SALINAS Y FABRES S A", "rut": "91.502.000-3"}, {"ppu": "RSHL92", "vin": "LTR72A2W4MA000159", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "SALINAS Y FABRES S A", "rut": "91.502.000-3"}, {"ppu": "RSHP49", "vin": "LTR72A2W7MA000222", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "SALINAS Y FABRES S A", "rut": "91.502.000-3"}, {"ppu": "RSHP50", "vin": "LTR72A2W0MA000126", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "SALINAS Y FABRES S A", "rut": "91.502.000-3"}, {"ppu": "RSHP51", "vin": "LTR72A2W8MA000228", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "SALINAS Y FABRES S A", "rut": "91.502.000-3"}, {"ppu": "RSKY48", "vin": "LTR72A2W5MA000154", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MAGDALENA ROSA PINO GILBERTO", "rut": "14.332.538-5"}, {"ppu": "RSPB35", "vin": "LTR72A2W5MA000218", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "SALINAS Y FABRES S A", "rut": "91.502.000-3"}, {"ppu": "RSRB48", "vin": "LTR72A2W1LA002417", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "blanco", "anio": "2020", "cliente": "JUAN PABLO BENNETT", "rut": "15.313.241-0"}, {"ppu": "RSTR27", "vin": "LTR72A2W6LA002428", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "Azul", "anio": "2021", "cliente": "XAVIER HORACIO FIGUEROA FOESSEL", "rut": "8.869.679-4"}, {"ppu": "RSWV69", "vin": "LTR72A2W8LA002561", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "Azul", "anio": "2021", "cliente": "TOMAS IGNACIO GOMEZ VALLARINO", "rut": "20.287.138-0"}, {"ppu": "RTBX20", "vin": "LTR72A2W9MA000237", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "FEDERICO SCHMIDT GONZALEZ", "rut": "16.609.020-2"}, {"ppu": "RTGR67", "vin": "LTR72A2W6MA000146", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "SALINAS Y FABRES S A", "rut": "91.502.000-3"}, {"ppu": "RTGR69", "vin": "LTR72A2W9MA000254", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "SALINAS Y FABRES S A", "rut": "91.502.000-3"}, {"ppu": "RTGR70", "vin": "LTR72A2WXMA000103", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "SALINAS Y FABRES S A", "rut": "91.502.000-3"}, {"ppu": "RTGR78", "vin": "LTR72A2WXMA000120", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "SALINAS Y FABRES S A", "rut": "91.502.000-3"}, {"ppu": "RTWG94", "vin": "LTR72A2W5MA000249", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "PATRICIO ALEJANDRO PONCE ARQUEROS", "rut": "15.098.649-4"}, {"ppu": "RTWG96", "vin": "LTR72A2W0LA002327", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "Blanco", "anio": "2021", "cliente": "HANS EBEN BARROS", "rut": "21.318.547-0"}, {"ppu": "RTWG98", "vin": "LTR72A2W1MA000104", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "WASHINGTON EDUARDO STAIG CLARKE", "rut": "5.351.364-6"}, {"ppu": "RTXP31", "vin": "LTR72A2W4MA000128", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "BANCO DE CREDITO E INVERSIONES", "rut": "97.006.000-6"}, {"ppu": "RTXP33", "vin": "LTR72A2W0MA000191", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "BANCO DE CREDITO E INVERSIONES", "rut": "97.006.000-6"}, {"ppu": "RTZV99", "vin": "LTR72A2W0MA000255", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "FRANCO JACOBO FLORES CONTRERAS", "rut": "16.938.579-3"}, {"ppu": "RVKX35", "vin": "LTR72A2W7MA000110", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "CARLOS MUSALEM CUMSILLE", "rut": "13.004.103-5"}, {"ppu": "RVVX62", "vin": "LTR72A2W8LA002365", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Azul", "anio": "2021", "cliente": "LUIS ALBERTO CAICEDO RODRIGUEZ", "rut": "14.651.412-K"}, {"ppu": "RVVX64", "vin": "LTR72A2W8LA002494", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "Blanco", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RVVX65", "vin": "LTR72A2W7LA002485", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "Blanco", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RVVX66", "vin": "LTR72A2W8LA002401", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "blanco", "anio": "2020", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RVVX71", "vin": "LTR72A2W5LA002601", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "Blanco", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RVVX72", "vin": "LTR72A2W3MA000220", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "LUZ MAGALY SOLANGE NUÑEZ RIVERA", "rut": "8.838.634-5"}, {"ppu": "RVWR71", "vin": "LTR72A2W0LA002604", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "Rojo", "anio": "2021", "cliente": "PATRICIA DELGADO SANHUEZA", "rut": "10.863.946-6"}, {"ppu": "RVWR93", "vin": "LTR72A2W6MA000244", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RWGX27", "vin": "LTR72A2WXMA000134", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "VIVIANA PAMELA MILLAN VILCHES", "rut": "11.635.497-7"}, {"ppu": "RWJH49", "vin": "LTR72A2W8MA000116", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJH50", "vin": "LTR72A2W3MA000170", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJH53", "vin": "LTR72A2W8MA000214", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJH56", "vin": "LTR72A2W2MA000127", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJJ33", "vin": "LTR72A2W3MA000167", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJJ37", "vin": "LTR72A2W7MA000107", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJJ65", "vin": "LTR72A2W0MA000160", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJJ67", "vin": "LTR72A2W0MA000238", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJJ68", "vin": "LTR72A2W0MA000157", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJJ72", "vin": "LTR72A2W9MA000111", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJJ78", "vin": "LTR72A2W6MA000129", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJJ79", "vin": "LTR72A2W3MA000119", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJJ80", "vin": "LTR72A2W6MA000132", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJJ81", "vin": "LTR72A2W5MA000106", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWJJ85", "vin": "LTR72A2W4MA000162", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MUNICIPALIDAD DE CONCHALI", "rut": "69.070.200-2"}, {"ppu": "RWKY43", "vin": "LTR72A2W4MA000114", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "GABRIELA ALICIA CERPA CERVANTES", "rut": "13.551.398-9"}, {"ppu": "RWLB57", "vin": "LTR72A2W7MA000138", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "BANCO DE CHILE", "rut": "97.004.000-5"}, {"ppu": "RWLZ89", "vin": "LTR72A2W9MA000139", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "CECILIA ALIAGA HERNANDEZ", "rut": "8.828.293-0"}, {"ppu": "RWTF94", "vin": "LTR72A2W5MA000123", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "MOISES EDUARDO POBLETE HERNANDEZ", "rut": "14.162.994-8"}, {"ppu": "RWTH58", "vin": "LTR72A2W8MA000259", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "EMMANUEL FIRMANI HISPA", "rut": "5.910.338-5"}, {"ppu": "RWTH61", "vin": "LTR72A2W0MA000143", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "DEREK CHARLES SASSOON", "rut": "14.568.029-8"}, {"ppu": "RWYJ88", "vin": "LTR72A2W2MA000144", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "GUNTHER ALKMUND GOECKE FIGUEROA", "rut": "8.767.035-K"}, {"ppu": "RWYJ90", "vin": "LTR72A2W8MA000150", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "MONICA BOBADILLA WILKE", "rut": "7.684.360-0"}, {"ppu": "RXDY74", "vin": "LTR72A2W5MA000171", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "TRACY MELANIE MORA SUAREZ", "rut": "17.417.311-7"}, {"ppu": "RXFV19", "vin": "LTR72A2W5LA002355", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "Rojo", "anio": "2021", "cliente": "FOTOMARKET SPA", "rut": "77.161.876-6"}, {"ppu": "RXFV25", "vin": "LTR72A2W8LA002334", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "blanco", "anio": "2020", "cliente": "NATALIA VENEGAS PEÑA", "rut": "16.667.826-9"}, {"ppu": "RXFV28", "vin": "LTR72A2W4LA002542", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RXFV35", "vin": "LTR72A2W9LA002536", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "ESCUELA DE CONDUCTORES V & V LTDA.", "rut": "76.332.189-4"}, {"ppu": "RXFV37", "vin": "LTR72A2W6LA002624", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "JUAN PABLO ORTIZ PONCE", "rut": "17.372.948-0"}, {"ppu": "RXFV38", "vin": "LTR72A2W7LA002387", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "TOMAS EDUARDO MULLER SPROAT", "rut": "4.465.942-5"}, {"ppu": "RXFV45", "vin": "LTR72A2W5LA002534", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "MATIAS JOSE APPARCEL CARRILLO", "rut": "77.104.924-9"}, {"ppu": "RXFV47", "vin": "LTR72A2W2LA002412", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Azul", "anio": "2021", "cliente": "MUNICIPALIDAD DE MELIPILLA", "rut": "69.072.900-8"}, {"ppu": "RXFV51", "vin": "LTR72A2W4LA002492", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Azul", "anio": "2021", "cliente": "MUNICIPALIDAD DE MELIPILLA", "rut": "69.072.900-8"}, {"ppu": "RXFV56", "vin": "LTR72A2W6LA002526", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Azul", "anio": "2021", "cliente": "MUNICIPALIDAD DE MELIPILLA", "rut": "69.072.900-8"}, {"ppu": "RXFV57", "vin": "LTR72A2W4LA002539", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Azul", "anio": "2021", "cliente": "IVAN PATRICIO HERNANDEZ SOTOMAYOR", "rut": "8.395.228-8"}, {"ppu": "RXFV60", "vin": "LTR72A2W3LA002547", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Azul", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RXFV64", "vin": "LTR72A2W0LA002490", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Azul", "anio": "2021", "cliente": "PAULA ANDREA RODRIGUEZ BUSTAMANTE", "rut": "10.623.935-5"}, {"ppu": "RXFV67", "vin": "LTR72A2W3LA002404", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Azul", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RXFV70", "vin": "LTR72A2W9LA002603", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Azul", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RXFV73", "vin": "LTR72A2W3LA002385", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Azul", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "RXFV81", "vin": "LTR72A2W1LA002207", "marca": "MAPLE", "modelo": "30X", "tipo": "Luxury", "color": "Rojo", "anio": "2020", "cliente": "CARMEN GLORIA GONZALEZ AMARAL", "rut": "6.223.382-6"}, {"ppu": "RXLC40", "vin": "LTR72A2W1MA000149", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "White", "anio": "2022", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "RXLC46", "vin": "LTR72A2W6MA000177", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "White", "anio": "2022", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "RXLC47", "vin": "LTR72A2W4MA000226", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "White", "anio": "2022", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "RXLC49", "vin": "LTR72A2W4MA000212", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Red", "anio": "2022", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "RXLC53", "vin": "LTR72A2WXMA000165", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Red", "anio": "2022", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "RXLC65", "vin": "LTR72A2WXMA000215", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Red", "anio": "2022", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "RXLC67", "vin": "LTR72A2W0MA000224", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Red", "anio": "2022", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "RXLC70", "vin": "LTR72A2WXMA000151", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blue", "anio": "2022", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "RXLC72", "vin": "LTR72A2W9MA000156", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blue", "anio": "2022", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "RXLC73", "vin": "LTR72A2WXMA000182", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blue", "anio": "2022", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "RXXC19", "vin": "LTR72A2WXMA000232", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "White", "anio": "2022", "cliente": "CONSTANZA MIRNA PRIETO", "rut": "10.107.405-6"}, {"ppu": "RXXC77", "vin": "LTR72A2W5MA000137", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "White", "anio": "2022", "cliente": "JONATAN SAUL ELIAS CERRO", "rut": "15.159.048-9"}, {"ppu": "RXYW17", "vin": "LTR72A2W7MA000172", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Rojo", "anio": "2021", "cliente": "MARCELO ENRIQUE ANGUITA FUENTES", "rut": "15.843.431-8"}, {"ppu": "SBDH26", "vin": "LJNDZU5T7NN041876", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2022", "cliente": "OPERAVIAS SPA", "rut": "76.406.157-8"}, {"ppu": "SBDH36", "vin": "LJNDZU5TXNN041743", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2022", "cliente": "AUTOPISTA CENTRAL", "rut": "96.945.440-8"}, {"ppu": "SBDH46", "vin": "LJNDZU5T0NN041914", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2022", "cliente": "AUTOPISTA CENTRAL", "rut": "96.945.440-8"}, {"ppu": "SBDH56", "vin": "LJNDZU5T2NN041767", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2022", "cliente": "OPERAVIAS SPA", "rut": "76.406.157-8"}, {"ppu": "SBDH66", "vin": "LJNDZU5T9NN041829", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2022", "cliente": "OPERAVIAS SPA", "rut": "76.406.157-8"}, {"ppu": "SBDH85", "vin": "LJNDZU5T8NN041871", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2022", "cliente": "OPERAVIAS SPA", "rut": "76.406.157-8"}, {"ppu": "SBDH98", "vin": "LJNDZU5T9NN041832", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2022", "cliente": "AUTOPISTA CENTRAL", "rut": "96.945.440-8"}, {"ppu": "SBSX81", "vin": "LJNDZU5T8NN041594", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2022", "cliente": "JORGE SCHMIDT Y CIA LTDA", "rut": "78.023.520-9"}, {"ppu": "SBYC72", "vin": "LJNDZU5T2NN041946", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Rojo", "anio": "2022", "cliente": "BANCO SANTANDER CHILE", "rut": "97.036.000-K"}, {"ppu": "SBYC73", "vin": "LJNDZU5T4NN041947", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Rojo", "anio": "2022", "cliente": "BANCO SANTANDER CHILE", "rut": "97.036.000-K"}, {"ppu": "SCGC43", "vin": "LJNDZU5T2NN041607", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2022", "cliente": "SALINAS Y FABRES S A", "rut": "91.502.000-3"}, {"ppu": "SCJF66", "vin": "LJNDZU5T9NN041670", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2022", "cliente": "SOCIEDAD AUSTRAL DE ELECTRICIDAD", "rut": "76.073.162-5"}, {"ppu": "SCJF67", "vin": "LJNDZU5T1NN041680", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Blanco", "anio": "2022", "cliente": "EMPRESA ELECTRICA DE LA FRONTERA", "rut": "76.073.164-1"}, {"ppu": "SDSW10", "vin": "LJNDZU5T2NN041901", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Amarillo", "anio": "2022", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "SHTL76", "vin": "LJNDZU5T4NN041897", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Amarillo", "anio": "2022", "cliente": "CELECTRIC SERV. DE ING. Y MANT. LTDA.", "rut": "76.457.479-6"}, {"ppu": "SKPJ61", "vin": "L6T78A4W2NV177821", "marca": "MAPLE", "modelo": "60S", "tipo": "Automovil", "color": "blanco", "anio": "2022", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "SKPJ62", "vin": "LJNDZU5T2PN407004", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "azul", "anio": "2022", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-4"}, {"ppu": "SKVD80", "vin": "LJNDZU5T2NN045785", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "blanco", "anio": "2022", "cliente": "AUTOPISTA CENTRAL", "rut": "96.945.440-8"}, {"ppu": "SLCF69", "vin": "LJNDZU5T1NN045728", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "blanco", "anio": "2022", "cliente": "CHRISTOPHER ALLENDES E.I.R.L.", "rut": "77.317.526-8"}, {"ppu": "SLHD16", "vin": "LJNDZU5TXPN407106", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "plateado", "anio": "2022", "cliente": "MERVID", "rut": "76.420.368-2"}, {"ppu": "SLRH99", "vin": "LJNDZU5T1NN045745", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "blanco", "anio": "2022", "cliente": "CARLOS MUSALEM", "rut": "13.004.103-5"}, {"ppu": "SLTP40", "vin": "LJNDZU5T0NN046269", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "blanco", "anio": "2022", "cliente": "CGE", "rut": "76.411.321-7"}, {"ppu": "SLWW25", "vin": "L6T78A4WXNV180367", "marca": "MAPLE", "modelo": "60S", "tipo": "Automovil", "color": "blanco", "anio": "2023", "cliente": "TANNER LEASING S.A.", "rut": "96.912.590-0"}, {"ppu": "SLXJ73", "vin": "L6T78A4W8NV180321", "marca": "MAPLE", "modelo": "60S", "tipo": "Automovil", "color": "blanco", "anio": "2023", "cliente": "TANNER LEASING S.A.", "rut": "96.912.590-0"}, {"ppu": "SPBR45", "vin": "LJNDZU5T6NN045837", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "blanco", "anio": "2022", "cliente": "SALFA RENT", "rut": "91.502.000-3"}, {"ppu": "SPCR16", "vin": "LTR72A2W1MA000135", "marca": "MAPLE", "modelo": "30X", "tipo": "Fashion", "color": "Blanco", "anio": "2021", "cliente": "GM HOLDINGS S.A.", "rut": "76.240.103-7"}, {"ppu": "SPYC25", "vin": "LJNDZU5TXNN045789", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "blanco", "anio": "2022", "cliente": "ITAU CORPBANCA", "rut": "97.023.000-9"}, {"ppu": "SPZR94", "vin": "LJNDZU5T6NN045739", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "blanco", "anio": "2022", "cliente": "TANNER LEASING S.A.", "rut": "96.912.590-0"}, {"ppu": "SRFP27", "vin": "LJNDZU5T0NN046272", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "rojo", "anio": "2022", "cliente": "ENEX", "rut": "92.011.000-2"}, {"ppu": "SRTK92", "vin": "LJNDZU5T2PN407102", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "Amarillo", "anio": "2022", "cliente": "SANTANDER LEASING", "rut": "97.036.000-K"}, {"ppu": "SSHC46", "vin": "LJNDZU5TXNN046148", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "blanco", "anio": "2022", "cliente": "ADVANCED COMPUTING TECH.", "rut": "96.609.940-2"}, {"ppu": "SVGC71", "vin": "LJNDZU5T0NN045736", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "blanco", "anio": "2022", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "SWXJ81", "vin": "LJNDZU5TXPN406876", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "rojo", "anio": "2022", "cliente": "BANCO DE CREDITO E INVERSIONES", "rut": "97.006.000-6"}, {"ppu": "SWZS17", "vin": "LMPG1KMB6MA252302", "marca": "FARIZON", "modelo": "E6", "tipo": "VAN", "color": "Blanco", "anio": "2021", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "SWZS18", "vin": "LMPA1JMB1NA226868", "marca": "FARIZON", "modelo": "V6E", "tipo": "Furgón", "color": "blanco", "anio": "2022", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "TBDS39", "vin": "LMPA1JMB5PA216184", "marca": "FARIZON", "modelo": "V6E", "tipo": "Furgón", "color": "blanco", "anio": "2023", "cliente": "CARGA INTELIGENTE SPA", "rut": "76.309.299-2"}, {"ppu": "TBGL78", "vin": "LJNDZU5T1PN407043", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "negro", "anio": "2022", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "TBRY57", "vin": "LJNDZU5TXNN045744", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "blanco", "anio": "2022", "cliente": "BANCO DE CREDITO E INVERSIONES", "rut": "97.006.000-6"}, {"ppu": "TBXD13", "vin": "L6T78A4W1PV170068", "marca": "MAPLE", "modelo": "60S", "tipo": "Automovil", "color": "blanco", "anio": "2023", "cliente": "AMERIS ELECTROMOVILIDAD SPA", "rut": "76.699.563-2"}, {"ppu": "TBXD14", "vin": "L6T78A4W2PV170080", "marca": "MAPLE", "modelo": "60S", "tipo": "Automovil", "color": "blanco", "anio": "2023", "cliente": "AMERIS ELECTROMOVILIDAD SPA", "rut": "76.699.563-2"}, {"ppu": "TBXT35", "vin": "L6T78A4WXPV170182", "marca": "MAPLE", "modelo": "60S", "tipo": "Automovil", "color": "blanco", "anio": "2023", "cliente": "AMERIS ELECTROMOVILIDAD SPA", "rut": "76.699.563-2"}, {"ppu": "TGBY66", "vin": "LJNDZU5T5NN045750", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "blanco", "anio": "2022", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "THVZ98", "vin": "LMPA1JMBXPA216195", "marca": "FARIZON", "modelo": "V6E", "tipo": "Furgón", "color": "blanco", "anio": "2024", "cliente": "BANCO ITAU", "rut": "97.023.000-9"}, {"ppu": "THYX24", "vin": "LJNDZU5T0PN406921", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "azul", "anio": "2023", "cliente": "BANCO SCOTIABANK", "rut": "97.018.000-1"}, {"ppu": "TJXV17", "vin": "LMXD12BC2RZ355739", "marca": "DFLZ", "modelo": "M5-7 PAS.", "tipo": "Minibus", "color": "Blanco", "anio": "2024", "cliente": "EMPRESA CONSTRUCTORA FLUOR SALFA", "rut": "76.761.547-7"}, {"ppu": "TKXD18", "vin": "LMXD12BC3LZ461074", "marca": "DFLZ", "modelo": "M5", "tipo": "Minibus", "color": "Blanco", "anio": "2020", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-9"}, {"ppu": "TKXG76", "vin": "LJNDZU5T4SN411256", "marca": "ZNA", "modelo": "New R6", "tipo": "Camioneta", "color": "Roja", "anio": "2024", "cliente": "Activo Fijo - Test Drive", "rut": "77.104.924-6"}, {"ppu": "TKXW35", "vin": "LJNDZU5T4SN411130", "marca": "ZNA", "modelo": "New R6", "tipo": "Camioneta", "color": "Roja", "anio": "2024", "cliente": "EMPRESA CONSTRUCTORA FLUOR SALFA", "rut": "76.761.547-7"}, {"ppu": "TLXG11", "vin": "LMXD12BC8RZ355745", "marca": "DFLZ", "modelo": "M5-9 PAS.", "tipo": "Minibus", "color": "Blanco", "anio": "2024", "cliente": "GM HOLDINGS S.A.", "rut": "76.240.103-7"}, {"ppu": "TPPP51", "vin": "LMPA1JMB3PA216202", "marca": "FARIZON", "modelo": "V6E", "tipo": "Furgón", "color": "blanco", "anio": "2023", "cliente": "TRANSPORTES LKW LIMITADA", "rut": "76.270.198-7"}, {"ppu": "TPWV77", "vin": "LMXD12BC1PZ358161", "marca": "DFLZ", "modelo": "M5-9 PAS.", "tipo": "Minibus", "color": "Grafito", "anio": "2023", "cliente": "Banco Estado", "rut": "97.030.000-7"}, {"ppu": "TRHF51", "vin": "LMPA1JMB9PA216186", "marca": "FARIZON", "modelo": "V6E", "tipo": "Furgón", "color": "blanco", "anio": "2024", "cliente": "PROVEEDORES INTEGRALES PRISA S.A.", "rut": "96.556.940-5"}, {"ppu": "TRKL22", "vin": "LMPA1JMBXPA216200", "marca": "FARIZON", "modelo": "V6E", "tipo": "Furgón", "color": "blanco", "anio": "2024", "cliente": "BANCO DE CREDITO E INVERSIONES", "rut": "97.006.000-6"}, {"ppu": "TRSK57", "vin": "LJNDZUCT0RN060147", "marca": "ZNA", "modelo": "R7-EV 4WD GTB", "tipo": "Camioneta", "color": "Roja", "anio": "2024", "cliente": "A3 ELECTRIC MOBILITY SPA", "rut": "77.104.924-6"}, {"ppu": "TRVS31", "vin": "HGLH2ACPIRA700023", "marca": "Farizon", "modelo": "F3E", "tipo": "Camioneta", "color": "Gris Plata", "anio": "2024", "cliente": "BANCO DE CREDITO E INVERSIONES", "rut": "97.006.000-6"}, {"ppu": "TSDF51", "vin": "HGLH2ACP2RA700015", "marca": "Farizon", "modelo": "F3E", "tipo": "Camioneta", "color": "Gris Plata", "anio": "2024", "cliente": "IDEAL S.A.", "rut": "82.623.500-4"}, {"ppu": "TSDF52", "vin": "HGLH2ACP6RA700017", "marca": "Farizon", "modelo": "F3E", "tipo": "Camioneta", "color": "Gris Plata", "anio": "2024", "cliente": "IDEAL S.A.", "rut": "82.623.500-4"}, {"ppu": "TTRL21", "vin": "HGLH2ACP4RA700016", "marca": "Farizon", "modelo": "F3E", "tipo": "Camioneta", "color": "Gris Plata", "anio": "2025", "cliente": "BK SPA", "rut": "76.307.553-2"}, {"ppu": "TTRL22", "vin": "HGLH2ACPXRA700019", "marca": "Farizon", "modelo": "F3E", "tipo": "Camioneta", "color": "Gris Plata", "anio": "2025", "cliente": "BK SPA", "rut": "76.307.553-2"}, {"ppu": "TVFJ21", "vin": "LJNDZU5T9PN406982", "marca": "ZNA", "modelo": "R6", "tipo": "Camioneta", "color": "negro", "anio": "2024", "cliente": "INLAC SOCIEDAD ANONIMA", "rut": "79.677.320-0"}, {"ppu": "TVHZ23", "vin": "LMPA1JMB7PA216218", "marca": "FARIZON", "modelo": "V6E", "tipo": "Furgón", "color": "blanco", "anio": "2025", "cliente": "GAMA SERVICIOS FINANCIEROS S.A.", "rut": "76.238.714-K"}, {"ppu": "TVJW32", "vin": "LJNDZU5T3PN053476", "marca": "ZNA", "modelo": "New R6", "tipo": "Camioneta", "color": "blanco", "anio": "2023", "cliente": "BANCO INTERNACIONAL", "rut": "97.011.000-3"}, {"ppu": "TVST44", "vin": "LJNDZUCT0RN061833", "marca": "ZNA", "modelo": "R7-EV 4WD GTB", "tipo": "Camioneta", "color": "Roja", "anio": "2024", "cliente": "BANCO INTERNACIONAL", "rut": "97.011.000-3"}, {"ppu": "TWBY43", "vin": "LMPA1JMB2PA216238", "marca": "FARIZON", "modelo": "V6E", "tipo": "Furgón", "color": "blanco", "anio": "2024", "cliente": "BK SPA", "rut": "76.307.553-2"}, {"ppu": "TWJR61", "vin": "LMPA1JMB4PA216189", "marca": "FARIZON", "modelo": "V6E", "tipo": "Furgón", "color": "blanco", "anio": "2023", "cliente": "SOCIEDAD PRODUCTORA DE CARNES S.A.", "rut": "76.025.703-6"}, {"ppu": "TYDW52", "vin": "LJNDZUCT9SN416262", "marca": "ZNA", "modelo": "R7-EV 4WD GTB", "tipo": "Camioneta", "color": "Roja", "anio": "2025", "cliente": "BANCO DE CREDITO E INVERSIONES", "rut": "97.006.000-6"}, {"ppu": "TYKY10", "vin": "LMPA1JMB7PA216249", "marca": "FARIZON", "modelo": "V6E", "tipo": "Furgón", "color": "blanco", "anio": "2024", "cliente": "GAMA SERVICIOS FINANCIEROS S.A.", "rut": "76.238.714-K"}, {"ppu": "TZKR76", "vin": "LJNDZUCT7SN416261", "marca": "ZNA", "modelo": "R7-EV 4WD GBT", "tipo": "Camioneta", "color": "Roja", "anio": "2025", "cliente": "BANCO DE CREDITO E INVERSIONES", "rut": "97.006.000-6"}, {"ppu": "VBVK57", "vin": "LJNDZUCT4SN416203", "marca": "ZNA", "modelo": "R7-EV 4WD GBT", "tipo": "Camioneta", "color": "Roja", "anio": "2025", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "VCJR16", "vin": "LJNDZUCT6SN416204", "marca": "ZNA", "modelo": "R7-EV 4WD GBT", "tipo": "Camioneta", "color": "Blanco", "anio": "2025", "cliente": "GAMA SERVICIOS FINANCIEROS S.A.", "rut": "76.238.714-K"}, {"ppu": "VCYT27", "vin": "LJNDZUCT1SN416210", "marca": "ZNA", "modelo": "R7-EV 4WD GBT", "tipo": "Camioneta", "color": "Roja", "anio": "2025", "cliente": "LEASING DEL PACIFICO SPA", "rut": "96.510.300-7"}, {"ppu": "VDCC95", "vin": "LJNDZU5T1SN411019", "marca": "ZNA", "modelo": "New R6", "tipo": "Camioneta", "color": "Roja", "anio": "2025", "cliente": "BANCO DE CHILE", "rut": "97.004.000-5"}, {"ppu": "VDKJ11", "vin": "LJNDZUCT5SN416307", "marca": "ZNA", "modelo": "R7-EV 4WD GBT", "tipo": "Camioneta", "color": "Blanco", "anio": "2025", "cliente": "GAMA SERVICIOS FINANCIEROS S.A.", "rut": "76.238.714-K"}, {"ppu": "VDLR40", "vin": "LMPA1KMB2SA200345", "marca": "Farizon", "modelo": "V6E Luxury", "tipo": "Furgón", "color": "Blanco", "anio": "2025", "cliente": "INVERSIONES COSA NOSTRA SPA", "rut": "77.199.793-7"}, {"ppu": "VFRD43", "vin": "LMPA1JMB5PA216251", "marca": "Farizon", "modelo": "V6E", "tipo": "Furgón", "color": "Blanco", "anio": "2025", "cliente": "EVM CHILE SPA", "rut": "78021787-1"}, {"ppu": "VFRD53", "vin": "LMPAJMB5PA216265", "marca": "Farizon", "modelo": "V6E", "tipo": "Furgón", "color": "Blanco", "anio": "2025", "cliente": "EVM CHILE SPA", "rut": "78021787-1"}, {"ppu": "VFRD57", "vin": "LMPA1JMB8PA216261", "marca": "Farizon", "modelo": "V6E", "tipo": "Furgón", "color": "Blanco", "anio": "2025", "cliente": "EVM CHILE SPA", "rut": "78021787-1"}];
+</script>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// =================== SUPABASE ===================
+const SB_URL = "https://yimknwsxlqvpouyggaeu.supabase.co";
+const SB_KEY = "sb_publishable_yaaogZ_tj4nn0knOQVf7ow_pw1g7m0G";
+const SB_H = {"Content-Type":"application/json","apikey":SB_KEY,"Authorization":`Bearer ${SB_KEY}`};
+async function sbGet(t){try{const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.1`,{headers:SB_H});const d=await r.json();return d&&d[0]?.data||null;}catch{return null;}}
+async function sbSet(t,data){try{const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:"POST",headers:{...SB_H,"Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:1,data,updated_at:new Date().toISOString()})});return r.ok;}catch{return false;}}
+
+// =================== USUARIOS Y ROLES ===================
+const USUARIOS = [
+  {user:"admin",    pass:"voltera2025", nombre:"Administrador",    rol:"admin"},
+  {user:"recepcion",pass:"recep2025",   nombre:"Recepcionista",    rol:"recepcionista"},
+  {user:"gabriel",  pass:"gab2025",     nombre:"Gabriel Rivero",   rol:"tecnico"},
+  {user:"juan",     pass:"jua2025",     nombre:"Juan Figueroa",    rol:"tecnico"},
+  {user:"lukas",    pass:"luk2025",     nombre:"Lukas Jaramillo",  rol:"tecnico"},
+  {user:"repuestos",pass:"rep2025",     nombre:"Bodega/Repuestos", rol:"repuestos"},
+  {user:"flota",    pass:"flota2025",   nombre:"Gestión Flota",    rol:"flota"},
+];
+const TECNICOS = ["Gabriel Rivero","Juan Figueroa","Lukas Jaramillo"];
+const HH_SEMANA = 40;
+
+// Acceso por rol
+const puedeVer = (rol, modulo) => {
+  const permisos = {
+    admin:        ["dashboard","recepciones","programacion","ordenes","tecnicos","stock","inventario_taller"],
+    recepcionista:["recepciones","programacion","ordenes","inventario_taller"],
+    flota:      ["dashboard","flota"],
+    tecnico:      ["mi_agenda","mis_ots"],
+    repuestos:    ["stock"],
+  };
+  return (permisos[rol]||[]).includes(modulo);
+};
+
+// =================== CONSTANTES ===================
+const TIPOS_SRV=["Mantención preventiva","Revisión diagnóstico","Reparación mecánica","Reparación eléctrica","Garantía","Otro"];
+const ESTADOS_VEH=["Recibido","En diagnóstico","En reparación","Listo para entrega","Entregado"];
+const DIAS=["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+const HORAS=["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
+const CATEGORIAS=["Baterías","Carga","Motor","Conectores","Fluidos","Cables","Frenos","Sensores","Otro"];
+const STOCK_INI=[
+  {id:1,codigo:"BAT-001",nombre:"Módulo de batería 48V",categoria:"Baterías",stock:8,unidad:"unidad",costoUnit:320000},
+  {id:2,codigo:"CAR-002",nombre:"Cargador OBC 7.4kW",categoria:"Carga",stock:4,unidad:"unidad",costoUnit:185000},
+  {id:3,codigo:"MOT-003",nombre:"Controlador de motor BMS",categoria:"Motor",stock:6,unidad:"unidad",costoUnit:95000},
+  {id:4,codigo:"CON-004",nombre:"Conector Tipo 2",categoria:"Conectores",stock:15,unidad:"unidad",costoUnit:28000},
+  {id:5,codigo:"FLU-005",nombre:"Refrigerante dieléctrico",categoria:"Fluidos",stock:20,unidad:"litro",costoUnit:8500},
+  {id:6,codigo:"CAB-006",nombre:"Cable HV 35mm²",categoria:"Cables",stock:50,unidad:"metro",costoUnit:4200},
+  {id:7,codigo:"FRE-007",nombre:"Pastillas de freno EV",categoria:"Frenos",stock:12,unidad:"juego",costoUnit:42000},
+  {id:8,codigo:"SEN-008",nombre:"Sensor temperatura batería",categoria:"Sensores",stock:10,unidad:"unidad",costoUnit:18000},
+];
+
+const clp=n=>"$"+Math.round(n||0).toLocaleString("es-CL");
+
+// =================== FLOTA / LEASING ===================
+const FINANCIADORES = ["Ameris","Tanner","Cumplo","Penta","Xepelin","Primus","Directo","BCI","Santander","Sin financiamiento"];
+const TIPOS_MANT = ["Mantención preventiva","Revisión eléctrica","Reparación mecánica","Cambio batería","Revisión carga","Cambio neumáticos","Revisión frenos","Otro"];
+const ESTADOS_CONTRATO = ["Activo","Vencido","En negociación","Terminado anticipado","Pausado"];
+
+const mesStr = (n) => {
+  const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const d = new Date(n + "-01");
+  return meses[d.getMonth()] + " " + d.getFullYear();
+};
+const diasRestantes = (fin) => {
+  if(!fin) return null;
+  return Math.round((new Date(fin) - new Date()) / (1000*60*60*24));
+};
+const diasRestEl = (dias) => {
+  if(dias === null) return <span style={{color:"#aaa"}}>—</span>;
+  if(dias < 0)  return <span className="fl-dias-danger">Vencido hace {Math.abs(dias)}d</span>;
+  if(dias <= 30) return <span className="fl-dias-danger">⚠ {dias}d</span>;
+  if(dias <= 60) return <span className="fl-dias-warn">⏳ {dias}d</span>;
+  return <span className="fl-dias-ok">✓ {dias}d</span>;
+};
+
+const hoy=()=>new Date().toISOString().slice(0,10);
+const ahora=()=>new Date().toLocaleString("es-CL",{dateStyle:"full",timeStyle:"short"});
+const diasDesde=(fecha)=>{if(!fecha)return 0;const d=Math.floor((new Date()-new Date(fecha))/(1000*60*60*24));return d;};
+
+// =================== BADGE ===================
+const BC={gray:{bg:"#F1EFE8",tc:"#444"},blue:{bg:"#EBF2FF",tc:"#0C2D6B"},green:{bg:"#E8F5E9",tc:"#1B5E20"},amber:{bg:"#FFF8E1",tc:"#6D4C00"},red:{bg:"#FFEBEE",tc:"#B71C1C"},teal:{bg:"#E0F2F1",tc:"#00695C"},purple:{bg:"#F3E5F5",tc:"#6A1B9A"}};
+function Badge({label,color="gray"}){const c=BC[color]||BC.gray;return <span className="badge" style={{background:c.bg,color:c.tc}}>{label}</span>;}
+function eColor(e){return e==="Recibido"?"blue":e==="En diagnóstico"?"amber":e==="En reparación"?"red":e==="Listo para entrega"?"teal":e==="Entregado"?"green":"gray";}
+function otColor(e){return e==="Abierta"?"blue":e==="En proceso"?"amber":e==="Cerrada"?"teal":"green";}
+
+// =================== ANTIGÜEDAD ===================
+function AntBadge({dias}){
+  if(dias<=3)return <span className="antiguedad-ok">✓ {dias}d</span>;
+  if(dias<=7)return <span className="antiguedad-warn">⚠ {dias}d</span>;
+  return <span className="antiguedad-danger">🔴 {dias}d</span>;
+}
+
+// =================== MODAL ===================
+function Modal({title,onClose,children,wide}){
+  return(<div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="mbox" style={wide?{maxWidth:800}:{}}>
+      <div className="mh"><span className="mtit">{title}</span><button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#999",padding:"0 4px"}} className="no-print">×</button></div>
+      {children}
+    </div>
+  </div>);
+}
+function FL({label,children,full}){return(<div className="fl" style={full?{gridColumn:"1/-1"}:{}}><label>{label}</label>{children}</div>);}
+
+// =================== BÚSQUEDA VEHÍCULOS ===================
+function VehSearch({value,onChange}){
+  const [q,setQ]=useState(value||"");const [show,setShow]=useState(false);
+  const fil=q.length>=2?VEHICULOS_DB.filter(v=>v.ppu.toLowerCase().includes(q.toLowerCase())||v.vin.toLowerCase().includes(q.toLowerCase())||v.cliente.toLowerCase().includes(q.toLowerCase())).slice(0,8):[];
+  const sel=v=>{setQ(v.ppu);setShow(false);onChange(v);};
+  return(<div style={{position:"relative"}}>
+    <input value={q} onChange={e=>{setQ(e.target.value);setShow(true);onChange(null);}} onFocus={()=>setShow(true)} placeholder="Buscar patente, VIN o cliente..."/>
+    {show&&fil.length>0&&(<div style={{position:"absolute",zIndex:500,background:"#fff",border:"1px solid #e4e8ef",borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,.12)",width:"100%",maxHeight:240,overflowY:"auto",top:"calc(100% + 4px)"}}>
+      {fil.map(v=>(<div key={v.ppu+v.vin} onClick={()=>sel(v)} style={{padding:"7px 12px",cursor:"pointer",borderBottom:"1px solid #f0f2f5",fontSize:13}} onMouseEnter={e=>e.currentTarget.style.background="#f0f4ff"} onMouseLeave={e=>e.currentTarget.style.background=""}>
+        <div style={{fontWeight:600,color:"#0C2D6B"}}>{v.ppu} <span style={{fontSize:11,fontWeight:400,color:"#888"}}>VIN: {v.vin}</span></div>
+        <div style={{fontSize:12,color:"#888"}}>{v.marca} {v.modelo} {v.tipo} {v.anio} · {v.color} · {v.cliente}</div>
+      </div>))}
+    </div>)}
+  </div>);
+}
+
+// =================== GOOGLE CALENDAR ===================
+function makeGCal(p){
+  const pad=n=>String(n).padStart(2,"0");
+  const f=(p.fecha||hoy()).replace(/-/g,"");
+  const [hh,mm]=(p.hora||"09:00").split(":");
+  const sh=parseInt(hh),eh=sh+(parseInt(p.duracion)||2);
+  const start=`${f}T${pad(sh)}${mm}00`,end=`${f}T${pad(eh)}${mm}00`;
+  const title=encodeURIComponent(`🔧 ${p.tipo} — ${p.patente}`);
+  const det=encodeURIComponent(`Patente: ${p.patente}\nVIN: ${p.vin||""}\nVehículo: ${p.marca} ${p.modelo} ${p.anio}\nCliente: ${p.cliente}\nTécnico: ${p.tecnico||"Sin asignar"}\nTaller Voltera EV`);
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${det}`;
+}
+
+// =================== EXCEL ===================
+function exportarExcel(recepciones,ordenes,stock,programacion){
+  const X=window.XLSX,wb=X.utils.book_new();
+  X.utils.book_append_sheet(wb,X.utils.json_to_sheet(recepciones.length?recepciones.map(r=>({Fecha:r.fechaIngreso,Hora:r.horaIngreso||"",Patente:r.patente,VIN:r.vin||"",Marca:r.marca,Modelo:r.modelo,Tipo:r.tipo||"",Color:r.color||"",Año:r.anio,Estado:r.estado,Cliente:r.cliente,RUT:r.rut||"",Tel:r.telefono,Email:r.email,Motivo:r.motivo})):[{"Sin datos":""}]),"Recepciones");
+  const otR=[];ordenes.forEach(ot=>{const rec=recepciones.find(r=>r.id===parseInt(ot.recepcionId)||r.id===ot.recepcionId);const b={OT:ot.nroOT,Fecha:ot.fecha,Estado:ot.estado,Patente:rec?.patente||"",VIN:rec?.vin||"",Marca:rec?.marca||"",Modelo:rec?.modelo||"",Cliente:rec?.cliente||"",Tecnico:ot.tecnico||"",Tipo:ot.tipo,HH:ot.horasHombre,"V.HH":Math.round(ot.valorHH||0),"T.HH":Math.round(ot.totalHH||0),Repuesto:"",Cant:"",Sub:0,"T.Rep":Math.round(ot.totalRepuestos||0),Neto:Math.round(ot.totalOT||0),IVA:Math.round((ot.totalOT||0)*.19),Total:Math.round((ot.totalOT||0)*1.19)};if(!ot.repuestos?.length)otR.push(b);else ot.repuestos.forEach((r,i)=>otR.push({...b,Repuesto:r.nombre,Cant:r.cantidad,Sub:Math.round(r.cantidad*r.costoUnit),"T.Rep":i===0?Math.round(ot.totalRepuestos||0):"",Neto:i===0?Math.round(ot.totalOT||0):"",IVA:i===0?Math.round((ot.totalOT||0)*.19):"",Total:i===0?Math.round((ot.totalOT||0)*1.19):""}))));
+  X.utils.book_append_sheet(wb,X.utils.json_to_sheet(otR.length?otR:[{"Sin datos":""}]),"OTs");
+  X.utils.book_append_sheet(wb,X.utils.json_to_sheet(stock.map(s=>({Código:s.codigo||"",Nombre:s.nombre,Categoría:s.categoria,Unidad:s.unidad,Stock:s.stock,"C.Unit":Math.round(s.costoUnit),"V.Total":Math.round(s.stock*s.costoUnit),Alerta:s.stock<=2?"BAJO STOCK":s.stock<=4?"Revisar":"OK"}))),"Stock");
+  X.writeFile(wb,`Voltera_Taller_${hoy()}.xlsx`);
+}
+
+// =================== DOC IMPRIMIBLE: RECEPCIÓN ===================
+function DocRecepcion({rec, onClose}){
+  const timestamp=new Date().toLocaleString("es-CL",{dateStyle:"full",timeStyle:"short"});
+  const print=()=>window.print();
+  return(<Modal title="Comprobante de Recepción" onClose={onClose} wide>
+    <div style={{display:"flex",gap:8,marginBottom:14}} className="no-print">
+      <button className="bprint" onClick={print}><span>🖨</span> Imprimir / Guardar PDF</button>
+      <button onClick={onClose}>Cerrar</button>
+    </div>
+    <div className="print-doc" id="doc-recepcion">
+      <div className="pdoc-header">
+        <div>
+          <div className="pdoc-title">VOLTERA — TALLER EV</div>
+          <div className="pdoc-sub">Comprobante de Recepción de Vehículo</div>
+        </div>
+        <div style={{textAlign:"right",fontSize:12}}>
+          <div style={{fontWeight:700,fontSize:15,color:"#0C2D6B"}}>N° REC-{String(rec.id).slice(-6)}</div>
+          <div style={{color:"#555",marginTop:2}}>{timestamp}</div>
+        </div>
+      </div>
+
+      <div className="pdoc-section">
+        <div className="pdoc-section-title">Datos del vehículo</div>
+        <div className="pdoc-grid">
+          <div className="pdoc-row"><span className="pdoc-label">Patente:</span><span className="pdoc-val">{rec.patente}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">VIN:</span><span className="pdoc-val">{rec.vin||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Marca / Modelo:</span><span className="pdoc-val">{rec.marca} {rec.modelo}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Tipo:</span><span className="pdoc-val">{rec.tipo||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Año:</span><span className="pdoc-val">{rec.anio}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Color:</span><span className="pdoc-val">{rec.color||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Kilometraje:</span><span className="pdoc-val">{rec.km ? `${parseInt(rec.km).toLocaleString("es-CL")} km` : "—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Estado ingreso:</span><span className="pdoc-val">{rec.estado}</span></div>
+        </div>
+      </div>
+
+      <div className="pdoc-section">
+        <div className="pdoc-section-title">Datos del cliente</div>
+        <div className="pdoc-grid">
+          <div className="pdoc-row"><span className="pdoc-label">Nombre:</span><span className="pdoc-val">{rec.cliente}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">RUT:</span><span className="pdoc-val">{rec.rut||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Teléfono:</span><span className="pdoc-val">{rec.telefono||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Email:</span><span className="pdoc-val">{rec.email||"—"}</span></div>
+        </div>
+      </div>
+
+      <div className="pdoc-section">
+        <div className="pdoc-section-title">Motivo de ingreso / falla reportada</div>
+        <div style={{border:"1px solid #ddd",borderRadius:6,padding:"8px 12px",minHeight:50,fontSize:13,color:"#333"}}>
+          {rec.motivo||"Sin descripción registrada"}
+        </div>
+      </div>
+
+      <div className="pdoc-section">
+        <div className="pdoc-section-title">Condiciones de entrega (revisar al ingreso)</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"6px 16px",fontSize:12}}>
+          {["Golpes / rayones","Vidrios","Espejos","Luces","Ruedas / neumáticos","Documentos en regla","Objetos de valor","Nivel de carga batería"].map(item=>(
+            <div key={item} style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{width:12,height:12,border:"1px solid #999",borderRadius:2,flexShrink:0}}/>
+              <span>{item}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="pdoc-section">
+        <div className="pdoc-section-title">Observaciones adicionales</div>
+        <div style={{border:"1px solid #ddd",borderRadius:6,padding:"8px 12px",minHeight:40,fontSize:13}}></div>
+      </div>
+
+      <div className="pdoc-sign">
+        <div className="pdoc-sign-box">
+          <div>Firma del cliente</div>
+          <div style={{marginTop:2,fontWeight:500}}>{rec.cliente}</div>
+        </div>
+        <div className="pdoc-sign-box">
+          <div>Firma del recepcionista</div>
+          <div style={{marginTop:2,fontWeight:500}}>Voltera Taller EV</div>
+        </div>
+      </div>
+
+      <div className="pdoc-footer">
+        Voltera S.A. · Taller de Vehículos Eléctricos · Este documento es válido como comprobante de ingreso del vehículo al taller.
+      </div>
+    </div>
+  </Modal>);
+}
+
+// =================== DOC IMPRIMIBLE: COTIZACIÓN/FACTURA ===================
+function DocCotizacion({ot, recepciones, onClose}){
+  const rec=recepciones.find(r=>r.id===parseInt(ot.recepcionId)||r.id===ot.recepcionId);
+  const neto=ot.totalOT||0;
+  const timestamp=new Date().toLocaleString("es-CL",{dateStyle:"full",timeStyle:"short"});
+  const print=()=>window.print();
+  return(<Modal title={`${ot.nroOT} — Cotización / Factura`} onClose={onClose} wide>
+    <div style={{display:"flex",gap:8,marginBottom:14}} className="no-print">
+      <button className="bprint" onClick={print}><span>🖨</span> Imprimir / Guardar PDF</button>
+      <button onClick={onClose}>Cerrar</button>
+    </div>
+    <div className="print-doc">
+      <div className="pdoc-header">
+        <div>
+          <div className="pdoc-title">VOLTERA — TALLER EV</div>
+          <div className="pdoc-sub">{ot.estado==="Facturada"?"Factura de Servicio":"Cotización de Servicio"}</div>
+        </div>
+        <div style={{textAlign:"right",fontSize:12}}>
+          <div style={{fontWeight:700,fontSize:16,color:"#0C2D6B"}}>{ot.nroOT}</div>
+          <div style={{color:"#555",marginTop:2}}>{timestamp}</div>
+          <div style={{marginTop:4}}><Badge label={ot.estado} color={otColor(ot.estado)}/></div>
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:14}}>
+        <div className="pdoc-section">
+          <div className="pdoc-section-title">Datos del cliente</div>
+          <div className="pdoc-row"><span className="pdoc-label">Nombre:</span><span className="pdoc-val">{rec?.cliente||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">RUT:</span><span className="pdoc-val">{rec?.rut||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Teléfono:</span><span className="pdoc-val">{rec?.telefono||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Email:</span><span className="pdoc-val">{rec?.email||"—"}</span></div>
+        </div>
+        <div className="pdoc-section">
+          <div className="pdoc-section-title">Datos del vehículo</div>
+          <div className="pdoc-row"><span className="pdoc-label">Patente:</span><span className="pdoc-val" style={{fontWeight:700,fontSize:15}}>{rec?.patente||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">VIN:</span><span className="pdoc-val">{rec?.vin||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Vehículo:</span><span className="pdoc-val">{rec?.marca} {rec?.modelo} {rec?.tipo}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Año / Color:</span><span className="pdoc-val">{rec?.anio} / {rec?.color||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Técnico:</span><span className="pdoc-val">{ot.tecnico||"—"}</span></div>
+        </div>
+      </div>
+
+      <div className="pdoc-section">
+        <div className="pdoc-section-title">Descripción del servicio</div>
+        <div style={{border:"1px solid #ddd",borderRadius:6,padding:"8px 12px",fontSize:13,color:"#333",minHeight:36}}>
+          <strong>{ot.tipo}</strong>{ot.descripcion?` — ${ot.descripcion}`:""}
+        </div>
+      </div>
+
+      {ot.repuestos?.length>0&&(
+        <div className="pdoc-section">
+          <div className="pdoc-section-title">Repuestos e insumos</div>
+          <table style={{fontSize:13,border:"1px solid #ddd",borderRadius:6,overflow:"hidden"}}>
+            <thead><tr style={{background:"#f7f9fc"}}>
+              <th style={{padding:"6px 10px",fontWeight:600}}>Descripción</th>
+              <th style={{padding:"6px 10px",textAlign:"right",fontWeight:600}}>Cant.</th>
+              <th style={{padding:"6px 10px",textAlign:"right",fontWeight:600}}>P. unitario</th>
+              <th style={{padding:"6px 10px",textAlign:"right",fontWeight:600}}>Subtotal</th>
+            </tr></thead>
+            <tbody>{ot.repuestos.map(r=>(<tr key={r.stockId} style={{borderTop:"1px solid #eee"}}>
+              <td style={{padding:"6px 10px"}}>{r.nombre}</td>
+              <td style={{padding:"6px 10px",textAlign:"right"}}>{r.cantidad} {r.unidad}</td>
+              <td style={{padding:"6px 10px",textAlign:"right"}}>{clp(r.costoUnit)}</td>
+              <td style={{padding:"6px 10px",textAlign:"right"}}>{clp(r.cantidad*r.costoUnit)}</td>
+            </tr>))}</tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="pdoc-total-box">
+        <div className="pdoc-total-line"><span>Mano de obra ({ot.horasHombre} hrs × {clp(ot.valorHH)})</span><span>{clp(ot.totalHH)}</span></div>
+        <div className="pdoc-total-line"><span>Repuestos e insumos</span><span>{clp(ot.totalRepuestos)}</span></div>
+        <div className="pdoc-total-line"><span>Subtotal neto</span><span>{clp(neto)}</span></div>
+        <div className="pdoc-total-line"><span>IVA (19%)</span><span>{clp(neto*.19)}</span></div>
+        <div className="pdoc-grand"><span>TOTAL</span><span>{clp(neto*1.19)}</span></div>
+      </div>
+
+      {ot.observaciones&&<div style={{fontSize:12,color:"#666",marginTop:10,padding:"8px 12px",background:"#f7f9fc",borderRadius:6}}>Observaciones: {ot.observaciones}</div>}
+
+      <div className="pdoc-sign" style={{marginTop:28}}>
+        <div className="pdoc-sign-box">
+          <div>Firma del cliente</div>
+          <div style={{marginTop:2,fontWeight:500}}>{rec?.cliente}</div>
+        </div>
+        <div className="pdoc-sign-box">
+          <div>Sello y firma Voltera Taller EV</div>
+          <div style={{marginTop:2,fontWeight:500}}>{ot.tecnico||"Técnico asignado"}</div>
+        </div>
+      </div>
+
+      <div className="pdoc-footer">
+        Voltera S.A. · Taller de Vehículos Eléctricos · Cotización válida por 15 días desde la fecha de emisión.
+        {ot.estado==="Facturada"?" · Documento de pago emitido.":""}
+      </div>
+    </div>
+  </Modal>);
+}
+
+// =================== DASHBOARD ===================
+function Dashboard({recepciones,ordenes,stock}){
+  const wRef=useRef(null),mRef=useRef(null),tRef=useRef(null);
+  const wC=useRef(null),mC=useRef(null),tC=useRef(null);
+  const meses=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const mesAct=new Date().getMonth(),anioAct=new Date().getFullYear();
+  const semDias=()=>{const n=new Date(),d=n.getDay(),l=new Date(n);l.setDate(n.getDate()-(d===0?6:d-1));return Array.from({length:6},(_,i)=>{const x=new Date(l);x.setDate(l.getDate()+i);return x.toISOString().slice(0,10);});};
+  const dias=semDias();
+  const otsSem=dias.map(d=>ordenes.filter(o=>o.fecha===d).length);
+  const mL=Array.from({length:6},(_,i)=>{const m=new Date();m.setMonth(m.getMonth()-5+i);return meses[m.getMonth()];});
+  const otsM=Array.from({length:6},(_,i)=>{const m=new Date();m.setMonth(m.getMonth()-5+i);const mm=m.getMonth(),aa=m.getFullYear();return ordenes.filter(o=>{const f=new Date(o.fecha);return f.getMonth()===mm&&f.getFullYear()===aa;}).length;});
+  const hhTec=TECNICOS.map(t=>{const u=ordenes.filter(o=>o.tecnico===t&&dias.includes(o.fecha)).reduce((s,o)=>s+(parseFloat(o.horasHombre)||0),0);return{nombre:t.split(" ")[0],usado:u,disp:HH_SEMANA-u};});
+  useEffect(()=>{
+    if(wC.current)wC.current.destroy();if(mC.current)mC.current.destroy();if(tC.current)tC.current.destroy();
+    if(wRef.current)wC.current=new Chart(wRef.current,{type:"bar",data:{labels:["Lun","Mar","Mié","Jue","Vie","Sáb"],datasets:[{label:"OTs",data:otsSem,backgroundColor:"rgba(30,136,229,.75)",borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:"#f0f2f5"}},x:{grid:{display:false}}}}});
+    if(mRef.current)mC.current=new Chart(mRef.current,{type:"line",data:{labels:mL,datasets:[{label:"OTs",data:otsM,borderColor:"#1E88E5",backgroundColor:"rgba(30,136,229,.1)",tension:.4,fill:true,pointBackgroundColor:"#1E88E5",pointRadius:5}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:"#f0f2f5"}},x:{grid:{display:false}}}}});
+    if(tRef.current)tC.current=new Chart(tRef.current,{type:"bar",data:{labels:hhTec.map(h=>h.nombre),datasets:[{label:"HH usadas",data:hhTec.map(h=>h.usado),backgroundColor:"rgba(30,136,229,.8)",borderRadius:4,borderSkipped:false},{label:"HH disponibles",data:hhTec.map(h=>h.disp),backgroundColor:"rgba(200,220,255,.5)",borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:true,position:"top",labels:{font:{size:11}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,max:HH_SEMANA,grid:{color:"#f0f2f5"},title:{display:true,text:"Horas"}}}}});
+    return()=>{wC.current?.destroy();mC.current?.destroy();tC.current?.destroy();};
+  },[ordenes]);
+  const totalMes=ordenes.filter(o=>{const f=new Date(o.fecha);return f.getMonth()===mesAct&&f.getFullYear()===anioAct;}).length;
+  const facMes=ordenes.filter(o=>{const f=new Date(o.fecha);return f.getMonth()===mesAct&&f.getFullYear()===anioAct&&o.estado==="Facturada";}).reduce((s,o)=>s+(o.totalOT||0)*1.19,0);
+  const enCurso=ordenes.filter(o=>o.estado==="Abierta"||o.estado==="En proceso").length;
+  const bajStock=stock.filter(s=>s.stock<=3).length;
+  return(<div>
+    <div className="hero">
+      <div><div style={{fontSize:21,fontWeight:700,marginBottom:3}}>Taller Voltera EV</div><div style={{fontSize:13,color:"#90CAF9"}}>{new Date().toLocaleDateString("es-CL",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</div></div>
+      <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
+        {[{v:recepciones.length,l:"Vehículos"},{v:ordenes.length,l:"OTs totales"},{v:stock.length,l:"Ítems stock"}].map(x=>(<div key={x.l} style={{textAlign:"center"}}><div style={{fontSize:26,fontWeight:700}}>{x.v}</div><div style={{fontSize:11,color:"#90CAF9"}}>{x.l}</div></div>))}
+      </div>
+    </div>
+    <div className="mgrid">
+      <div className="mt mb2"><div className="ml">OTs este mes</div><div className="mv">{totalMes}</div></div>
+      <div className="mt mg2"><div className="ml">Facturado mes (c/IVA)</div><div className="mv" style={{fontSize:16}}>{clp(facMes)}</div></div>
+      <div className="mt ma"><div className="ml">OTs en curso</div><div className="mv">{enCurso}</div></div>
+      <div className="mt mr2"><div className="ml">Alertas stock</div><div className="mv">{bajStock}</div></div>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:16}}>
+      <div className="cw"><div className="ct">Servicios esta semana</div><canvas ref={wRef} height={160}/></div>
+      <div className="cw"><div className="ct">Servicios últimos 6 meses</div><canvas ref={mRef} height={160}/></div>
+      <div className="cw"><div className="ct">Holgura HH técnicos</div><canvas ref={tRef} height={160}/></div>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+      <div className="carde"><div className="ct">Últimas recepciones</div>
+        {recepciones.slice(-5).reverse().map(r=>(<div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid #f0f2f5"}}>
+          <div style={{width:36,height:36,borderRadius:8,background:"#EBF2FF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#0C2D6B",flexShrink:0}}>{r.patente?.slice(0,2)||"EV"}</div>
+          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:500,fontSize:13}}>{r.patente} <span style={{color:"#888",fontWeight:400}}>· {r.marca} {r.modelo}</span></div><div style={{fontSize:12,color:"#aaa"}}>{r.cliente} · {r.fechaIngreso}</div></div>
+          <Badge label={r.estado} color={eColor(r.estado)}/>
+        </div>))}
+        {!recepciones.length&&<p style={{color:"#aaa",fontSize:13}}>Sin recepciones.</p>}
+      </div>
+      <div className="carde"><div className="ct">OTs recientes</div>
+        {ordenes.slice(-5).reverse().map(o=>{const rec=recepciones.find(r=>r.id===parseInt(o.recepcionId)||r.id===o.recepcionId);return(<div key={o.id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:"1px solid #f0f2f5"}}>
+          <div style={{flex:1,minWidth:0}}><div style={{fontWeight:500,fontSize:13}}>{o.nroOT} <span style={{color:"#888",fontWeight:400}}>· {rec?.patente}</span></div><div style={{fontSize:12,color:"#aaa"}}>{o.tipo} · {o.fecha}</div></div>
+          <div style={{textAlign:"right"}}><div style={{fontWeight:600,fontSize:13,color:"#0C2D6B"}}>{clp(o.totalOT)}</div><Badge label={o.estado} color={otColor(o.estado)}/></div>
+        </div>);})}
+        {!ordenes.length&&<p style={{color:"#aaa",fontSize:13}}>Sin OTs.</p>}
+      </div>
+    </div>
+  </div>);
+}
+
+// =================== INVENTARIO TALLER ===================
+function InventarioTaller({recepciones}){
+  const [fechaRef,setFechaRef]=useState(hoy());
+  const enTaller=recepciones.filter(r=>r.estado!=="Entregado");
+  const antRef=useRef(null);const antC=useRef(null);
+  const rangos=[[0,3,"0-3 días"],[4,7,"4-7 días"],[8,14,"8-14 días"],[15,30,"15-30 días"],[31,9999,"+30 días"]];
+  const counts=rangos.map(([a,b])=>enTaller.filter(r=>{const d=diasDesde(r.fechaIngreso);return d>=a&&d<=b;}).length);
+  useEffect(()=>{
+    if(antC.current)antC.current.destroy();
+    if(antRef.current)antC.current=new Chart(antRef.current,{type:"bar",data:{labels:rangos.map(r=>r[2]),datasets:[{label:"Vehículos",data:counts,backgroundColor:["#4CAF50","#8BC34A","#FFC107","#FF5722","#B71C1C"],borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:"#f0f2f5"}},x:{grid:{display:false}}}}});
+    return()=>antC.current?.destroy();
+  },[recepciones]);
+  return(<div>
+    <div className="pgt">Inventario de taller</div>
+    <div className="pgs">Vehículos actualmente en taller por antigüedad de ingreso</div>
+    <div className="mgrid" style={{gridTemplateColumns:"repeat(5,1fr)"}}>
+      {rangos.map(([a,b,l],i)=>{const n=counts[i];const colors=["#4CAF50","#8BC34A","#FFC107","#FF5722","#B71C1C"];return(<div key={l} className="mt" style={{borderTop:`3px solid ${colors[i]}`}}><div className="ml">{l}</div><div className="mv" style={{color:colors[i]}}>{n}</div><div style={{fontSize:11,color:"#aaa"}}>{n===1?"vehículo":"vehículos"}</div></div>);})}
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+      <div className="cw"><div className="ct">Distribución por antigüedad</div><canvas ref={antRef} height={180}/></div>
+      <div className="cw"><div className="ct">Resumen</div>
+        <div style={{fontSize:13,marginTop:4}}>
+          <div style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f0f2f5"}}><span style={{color:"#888"}}>Total en taller</span><b>{enTaller.length}</b></div>
+          <div style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f0f2f5"}}><span style={{color:"#888"}}>Más de 7 días</span><b style={{color:"#FF5722"}}>{enTaller.filter(r=>diasDesde(r.fechaIngreso)>7).length}</b></div>
+          <div style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f0f2f5"}}><span style={{color:"#888"}}>Más de 14 días</span><b style={{color:"#B71C1C"}}>{enTaller.filter(r=>diasDesde(r.fechaIngreso)>14).length}</b></div>
+          <div style={{display:"flex",justifyContent:"space-between",padding:"6px 0"}}><span style={{color:"#888"}}>Promedio días en taller</span><b>{enTaller.length?Math.round(enTaller.reduce((s,r)=>s+diasDesde(r.fechaIngreso),0)/enTaller.length):0}d</b></div>
+        </div>
+      </div>
+    </div>
+    <div className="tw">
+      <table>
+        <thead><tr>
+          <th>Patente</th><th>Vehículo</th><th>Cliente</th><th>Estado</th>
+          <th style={{textAlign:"right"}}>Ingreso</th><th style={{textAlign:"right"}}>Días</th>
+        </tr></thead>
+        <tbody>{enTaller.sort((a,b)=>diasDesde(b.fechaIngreso)-diasDesde(a.fechaIngreso)).map(r=>{
+          const d=diasDesde(r.fechaIngreso);
+          return(<tr key={r.id} style={d>14?{background:"#FFF5F5"}:d>7?{background:"#FFFDE7"}:{}}>
+            <td style={{fontWeight:700,color:"#0C2D6B"}}>{r.patente}</td>
+            <td style={{fontSize:12}}>{r.marca} {r.modelo} {r.tipo} {r.anio}</td>
+            <td style={{fontSize:12,color:"#666"}}>{r.cliente}</td>
+            <td><Badge label={r.estado} color={eColor(r.estado)}/></td>
+            <td style={{textAlign:"right",fontSize:12,color:"#888"}}>{r.fechaIngreso}</td>
+            <td style={{textAlign:"right"}}><AntBadge dias={d}/></td>
+          </tr>);})}
+          {!enTaller.length&&<tr><td colSpan={6} style={{textAlign:"center",color:"#aaa",padding:20}}>No hay vehículos en taller</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  </div>);
+}
+
+// =================== RECEPCIONES ===================
+function Recepciones({recepciones,setRecepciones,onExport}){
+  const [show,setShow]=useState(false);const [search,setSearch]=useState("");
+  const blank={cliente:"",rut:"",email:"",telefono:"",marca:"",modelo:"",tipo:"",anio:"",patente:"",vin:"",km:"",color:"",motivo:"",estado:"Recibido",fechaIngreso:hoy(),horaIngreso:new Date().toTimeString().slice(0,5)};
+  const [form,setForm]=useState(blank);const [editId,setEditId]=useState(null);
+  const [docRec,setDocRec]=useState(null);
+  const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const onVeh=v=>{if(v)setForm(f=>({...f,patente:v.ppu,vin:v.vin,marca:v.marca,modelo:v.modelo,tipo:v.tipo,anio:v.anio,color:v.color,cliente:v.cliente,rut:v.rut}));};
+  const guardar=()=>{
+    if(!form.patente||!form.cliente)return alert("Completa cliente y patente");
+    const nuevo={...form,id:editId||Date.now()};
+    if(editId!=null)setRecepciones(r=>r.map(x=>x.id===editId?nuevo:x));
+    else setRecepciones(r=>[...r,nuevo]);
+    setShow(false);setEditId(null);setForm(blank);
+    if(!editId)setTimeout(()=>setDocRec(nuevo),200);
+  };
+  const editar=r=>{setForm(r);setEditId(r.id);setShow(true);};
+  const fil=recepciones.filter(r=>r.patente?.toLowerCase().includes(search.toLowerCase())||r.cliente?.toLowerCase().includes(search.toLowerCase())||r.marca?.toLowerCase().includes(search.toLowerCase())||r.vin?.toLowerCase().includes(search.toLowerCase()));
+  return(<div>
+    <div className="pgt">Recepciones de vehículos</div>
+    <div className="pgs">Registro de entrada al taller</div>
+    <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+      <input placeholder="Buscar patente, VIN, cliente..." value={search} onChange={e=>setSearch(e.target.value)} style={{flex:1,minWidth:160}}/>
+      <button className="be2 bsm" onClick={onExport}>⬇ Excel</button>
+      <button className="bp" onClick={()=>{setEditId(null);setForm(blank);setShow(true);}}>+ Nueva recepción</button>
+    </div>
+    {!fil.length&&<p style={{color:"#aaa",fontSize:13}}>Sin vehículos.</p>}
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      {fil.map(r=>(<div key={r.id} className="card" style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+        <div style={{width:40,height:40,borderRadius:9,background:"#EBF2FF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#0C2D6B",flexShrink:0}}>{r.patente?.slice(0,2)||"EV"}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+            <span style={{fontWeight:700,fontSize:15}}>{r.patente}</span>
+            <Badge label={r.estado} color={eColor(r.estado)}/>
+            {r.vin&&<span style={{fontSize:11,color:"#aaa"}}>VIN: {r.vin}</span>}
+          </div>
+          <div style={{fontSize:13,color:"#666"}}>{r.marca} {r.modelo} {r.tipo} {r.anio} · {r.color||""} · {r.cliente}</div>
+          {r.motivo&&<div style={{fontSize:12,color:"#aaa",marginTop:2}}>{r.motivo}</div>}
+        </div>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          <AntBadge dias={diasDesde(r.fechaIngreso)}/>
+          <span style={{fontSize:11,color:"#ccc"}}>{r.fechaIngreso} {r.horaIngreso||""}</span>
+          <button className="bsm" onClick={()=>editar(r)}>Editar</button>
+          <button className="bsm bprint" onClick={()=>setDocRec(r)} style={{fontSize:11}}>🖨</button>
+        </div>
+      </div>))}
+    </div>
+    {show&&(<Modal title={editId?"Editar recepción":"Nueva recepción"} onClose={()=>setShow(false)}>
+      <div className="sl2">Buscar en flota Voltera</div>
+      <div className="fl"><VehSearch value={form.patente} onChange={onVeh}/></div>
+      <div className="g2">
+        <div>
+          <div className="sl2">Datos del vehículo</div>
+          <FL label="Patente *"><input value={form.patente} onChange={e=>set("patente",e.target.value.toUpperCase())}/></FL>
+          <FL label="VIN"><input value={form.vin} onChange={e=>set("vin",e.target.value)}/></FL>
+          <FL label="Marca"><input value={form.marca} onChange={e=>set("marca",e.target.value)}/></FL>
+          <FL label="Modelo"><input value={form.modelo} onChange={e=>set("modelo",e.target.value)}/></FL>
+          <FL label="Tipo"><input value={form.tipo} onChange={e=>set("tipo",e.target.value)}/></FL>
+          <FL label="Año"><input type="number" value={form.anio} onChange={e=>set("anio",e.target.value)}/></FL>
+          <FL label="Color"><input value={form.color} onChange={e=>set("color",e.target.value)}/></FL>
+          <FL label="Km actuales"><input type="number" value={form.km} onChange={e=>set("km",e.target.value)}/></FL>
+        </div>
+        <div>
+          <div className="sl2">Datos del cliente</div>
+          <FL label="Cliente *"><input value={form.cliente} onChange={e=>set("cliente",e.target.value)}/></FL>
+          <FL label="RUT"><input value={form.rut} onChange={e=>set("rut",e.target.value)}/></FL>
+          <FL label="Email"><input type="email" value={form.email} onChange={e=>set("email",e.target.value)}/></FL>
+          <FL label="Teléfono"><input value={form.telefono} onChange={e=>set("telefono",e.target.value)} placeholder="+56 9..."/></FL>
+          <FL label="Fecha ingreso"><input type="date" value={form.fechaIngreso} onChange={e=>set("fechaIngreso",e.target.value)}/></FL>
+          <FL label="Hora ingreso"><input type="time" value={form.horaIngreso} onChange={e=>set("horaIngreso",e.target.value)}/></FL>
+          <FL label="Estado"><select value={form.estado} onChange={e=>set("estado",e.target.value)}>{ESTADOS_VEH.map(s=><option key={s}>{s}</option>)}</select></FL>
+        </div>
+      </div>
+      <FL label="Motivo de ingreso / falla reportada"><textarea value={form.motivo} onChange={e=>set("motivo",e.target.value)} rows={2}/></FL>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:12}}>
+        <button onClick={()=>setShow(false)}>Cancelar</button>
+        <button className="bp" onClick={guardar}>Guardar {!editId&&"e imprimir comprobante"}</button>
+      </div>
+    </Modal>)}
+    {docRec&&<DocRecepcion rec={docRec} onClose={()=>setDocRec(null)}/>}
+  </div>);
+}
+
+// =================== PROGRAMACIÓN ===================
+function Programacion({recepciones,programacion,setProgramacion,userTecnico}){
+  const [show,setShow]=useState(false);
+  const blank={recepcionId:"",tecnico:userTecnico||TECNICOS[0],dia:"Lunes",hora:"09:00",duracion:2,tipo:TIPOS_SRV[0],notas:"",fecha:hoy()};
+  const [form,setForm]=useState(blank);const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const guardar=()=>{if(!form.recepcionId)return alert("Selecciona un vehículo");setProgramacion(p=>[...p,{...form,id:Date.now()}]);setShow(false);setForm(blank);};
+  const del=id=>setProgramacion(p=>p.filter(x=>x.id!==id));
+  const visProg=userTecnico?programacion.filter(p=>p.tecnico===userTecnico):programacion;
+  const grid={};DIAS.forEach(d=>{grid[d]={};HORAS.forEach(h=>{grid[d][h]=[];});});
+  visProg.forEach(p=>{if(grid[p.dia]?.[p.hora])grid[p.dia][p.hora].push(p);});
+  const abrirGCal=p=>{const rec=recepciones.find(r=>r.id===parseInt(p.recepcionId)||r.id===p.recepcionId);window.open(makeGCal({...p,patente:rec?.patente||"",vin:rec?.vin||"",marca:rec?.marca||"",modelo:rec?.modelo||"",anio:rec?.anio||"",cliente:rec?.cliente||""}),"_blank");};
+  return(<div>
+    <div className="pgt">Programación semanal{userTecnico?` — ${userTecnico}`:""}</div>
+    <div className="pgs">Agenda de servicios</div>
+    <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+      {!userTecnico&&<button className="bp" onClick={()=>setShow(true)}>+ Agendar</button>}
+      {userTecnico&&<button className="bp" onClick={()=>setShow(true)}>+ Solicitar turno</button>}
+    </div>
+    <div style={{overflowX:"auto",border:"1px solid #e4e8ef",borderRadius:12,background:"#fff"}}>
+      <table style={{minWidth:680}}>
+        <thead><tr><th style={{width:60}}>Hora</th>{DIAS.map(d=><th key={d}>{d}</th>)}</tr></thead>
+        <tbody>{HORAS.map(h=>(<tr key={h}>
+          <td style={{fontSize:11,color:"#aaa",verticalAlign:"top",padding:"5px 7px"}}>{h}</td>
+          {DIAS.map(d=>(<td key={d} style={{padding:3,verticalAlign:"top",borderBottom:"1px solid #f0f2f5",minHeight:36}}>
+            {grid[d][h].map(p=>{const rec=recepciones.find(r=>r.id===parseInt(p.recepcionId)||r.id===p.recepcionId);return(<div key={p.id} className="ae">
+              <div style={{fontWeight:700,color:"#0C2D6B",fontSize:10}}>{rec?.patente||"—"}</div>
+              <div style={{color:"#1565C0",fontSize:9,marginBottom:2}}>{p.tecnico}</div>
+              <div style={{display:"flex",gap:2}}>
+                <button onClick={()=>abrirGCal(p)} style={{fontSize:9,padding:"1px 4px",background:"#FFF3E0",color:"#BF360C",border:"1px solid #FFCC80",borderRadius:3}}>📅</button>
+                {!userTecnico&&<button onClick={()=>del(p.id)} className="bd2" style={{fontSize:9,padding:"1px 4px",borderRadius:3}}>✕</button>}
+              </div>
+            </div>);})}
+          </td>))}
+        </tr>))}</tbody>
+      </table>
+    </div>
+    {show&&(<Modal title="Agendar servicio" onClose={()=>setShow(false)}>
+      <FL label="Vehículo *"><select value={form.recepcionId} onChange={e=>set("recepcionId",e.target.value)}><option value="">Seleccionar...</option>{recepciones.filter(r=>r.estado!=="Entregado").map(r=><option key={r.id} value={r.id}>{r.patente} — {r.marca} {r.modelo} ({r.cliente})</option>)}</select></FL>
+      <div className="g2">
+        <FL label="Técnico"><select value={form.tecnico} onChange={e=>set("tecnico",e.target.value)} disabled={!!userTecnico}>{TECNICOS.map(t=><option key={t}>{t}</option>)}</select></FL>
+        <FL label="Tipo de servicio"><select value={form.tipo} onChange={e=>set("tipo",e.target.value)}>{TIPOS_SRV.map(t=><option key={t}>{t}</option>)}</select></FL>
+        <FL label="Día"><select value={form.dia} onChange={e=>set("dia",e.target.value)}>{DIAS.map(d=><option key={d}>{d}</option>)}</select></FL>
+        <FL label="Hora"><select value={form.hora} onChange={e=>set("hora",e.target.value)}>{HORAS.map(h=><option key={h}>{h}</option>)}</select></FL>
+        <FL label="Duración (hrs)"><input type="number" min={1} max={8} value={form.duracion} onChange={e=>set("duracion",e.target.value)}/></FL>
+        <FL label="Fecha (Google Cal)"><input type="date" value={form.fecha} onChange={e=>set("fecha",e.target.value)}/></FL>
+      </div>
+      <FL label="Notas"><textarea value={form.notas} onChange={e=>set("notas",e.target.value)} rows={2}/></FL>
+      <div style={{background:"#EBF2FF",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#0C2D6B",marginBottom:8}}>📅 Botón <b>📅</b> en la agenda abre Google Calendar con el evento pre-llenado.</div>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8}}>
+        <button onClick={()=>setShow(false)}>Cancelar</button>
+        <button className="bp" onClick={guardar}>Agendar</button>
+      </div>
+    </Modal>)}
+  </div>);
+}
+
+// =================== ÓRDENES DE TRABAJO ===================
+function OrdenesTrabajo({recepciones,stock,setStock,ordenes,setOrdenes,onExport,userTecnico}){
+  const [show,setShow]=useState(false);const [docOT,setDocOT]=useState(null);
+  const blank={recepcionId:"",tecnico:userTecnico||TECNICOS[0],tipo:TIPOS_SRV[0],descripcion:"",horasHombre:1,valorHH:35000,repuestos:[],observaciones:"",estado:"Abierta",fecha:hoy()};
+  const [form,setForm]=useState(blank);const [ar,setAr]=useState({stockId:"",cantidad:1});
+  const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const addRep=()=>{if(!ar.stockId)return;const item=stock.find(s=>s.id===parseInt(ar.stockId));if(!item)return;if(ar.cantidad>item.stock)return alert(`Stock insuficiente. Disponible: ${item.stock}`);const ya=form.repuestos.find(r=>r.stockId===ar.stockId);if(ya)set("repuestos",form.repuestos.map(r=>r.stockId===ar.stockId?{...r,cantidad:r.cantidad+parseInt(ar.cantidad)}:r));else set("repuestos",[...form.repuestos,{stockId:ar.stockId,nombre:item.nombre,cantidad:parseInt(ar.cantidad),costoUnit:item.costoUnit,unidad:item.unidad}]);setAr({stockId:"",cantidad:1});};
+  const qRep=sid=>set("repuestos",form.repuestos.filter(r=>r.stockId!==sid));
+  const totRep=form.repuestos.reduce((s,r)=>s+r.cantidad*r.costoUnit,0);
+  const totHH=form.horasHombre*form.valorHH;const totOT=totRep+totHH;
+  const guardar=()=>{if(!form.recepcionId)return alert("Selecciona un vehículo");setStock(s=>s.map(item=>{const rep=form.repuestos.find(r=>r.stockId===String(item.id));return rep?{...item,stock:item.stock-rep.cantidad}:item;}));const nro=`OT-${String(ordenes.length+1).padStart(4,"0")}`;const nueva={...form,id:Date.now(),nroOT:nro,totalRepuestos:totRep,totalHH:totHH,totalOT:totOT};setOrdenes(o=>[...o,nueva]);setShow(false);setForm(blank);};
+  const cambEst=(id,estado)=>setOrdenes(o=>o.map(x=>x.id===id?{...x,estado}:x));
+  const visOTs=userTecnico?ordenes.filter(o=>o.tecnico===userTecnico):ordenes;
+  return(<div>
+    <div className="pgt">Órdenes de Trabajo{userTecnico?` — ${userTecnico}`:""}</div>
+    <div className="pgs">Gestión de servicios, repuestos y facturación</div>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        {["Abierta","En proceso","Cerrada","Facturada"].map(e=><Badge key={e} label={`${e} (${visOTs.filter(o=>o.estado===e).length})`} color={otColor(e)}/>)}
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        {!userTecnico&&<button className="be2 bsm" onClick={onExport}>⬇ Excel</button>}
+        <button className="bp" onClick={()=>setShow(true)}>+ Nueva OT</button>
+      </div>
+    </div>
+    {!visOTs.length&&<p style={{color:"#aaa",fontSize:13}}>Sin órdenes de trabajo.</p>}
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      {visOTs.slice().reverse().map(ot=>{const rec=recepciones.find(r=>r.id===parseInt(ot.recepcionId)||r.id===ot.recepcionId);return(<div key={ot.id} className="card">
+        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:5}}>
+          <span style={{fontWeight:700,color:"#0C2D6B"}}>{ot.nroOT}</span>
+          <Badge label={ot.estado} color={otColor(ot.estado)}/>
+          <span style={{fontSize:13,color:"#666"}}>{rec?.patente} — {rec?.marca} {rec?.modelo} · {rec?.cliente}</span>
+          <span style={{marginLeft:"auto",fontWeight:700,color:"#0C2D6B",fontSize:14}}>{clp(ot.totalOT)}</span>
+        </div>
+        <div style={{fontSize:12,color:"#aaa",marginBottom:7}}>{ot.tipo} · Téc: {ot.tecnico||"—"} · {ot.horasHombre} hrs · {ot.fecha}</div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+          <button className="bs2 bsm" onClick={()=>setDocOT(ot)}>Ver / Cotización</button>
+          <button className="bprint bsm" onClick={()=>setDocOT(ot)} style={{fontSize:11}}>🖨 Imprimir</button>
+          {ot.estado!=="Facturada"&&<select value={ot.estado} onChange={e=>cambEst(ot.id,e.target.value)} style={{fontSize:12,padding:"4px 8px",borderRadius:7,width:"auto"}}>{["Abierta","En proceso","Cerrada","Facturada"].map(s=><option key={s}>{s}</option>)}</select>}
+        </div>
+      </div>);})}
+    </div>
+    {docOT&&<DocCotizacion ot={docOT} recepciones={recepciones} onClose={()=>setDocOT(null)}/>}
+    {show&&(<Modal title="Nueva OT" onClose={()=>setShow(false)}>
+      <FL label="Vehículo *"><select value={form.recepcionId} onChange={e=>set("recepcionId",e.target.value)}><option value="">Seleccionar...</option>{recepciones.filter(r=>r.estado!=="Entregado").map(r=><option key={r.id} value={r.id}>{r.patente} — {r.marca} {r.modelo} ({r.cliente})</option>)}</select></FL>
+      <div className="g2">
+        <FL label="Técnico"><select value={form.tecnico} onChange={e=>set("tecnico",e.target.value)} disabled={!!userTecnico}>{TECNICOS.map(t=><option key={t}>{t}</option>)}</select></FL>
+        <FL label="Tipo"><select value={form.tipo} onChange={e=>set("tipo",e.target.value)}>{TIPOS_SRV.map(t=><option key={t}>{t}</option>)}</select></FL>
+        <FL label="Horas hombre"><input type="number" min={.5} step={.5} value={form.horasHombre} onChange={e=>set("horasHombre",parseFloat(e.target.value)||1)}/></FL>
+        <FL label="Valor HH ($/hr)"><input type="number" value={form.valorHH} onChange={e=>set("valorHH",parseInt(e.target.value)||0)}/></FL>
+        <FL label="Fecha"><input type="date" value={form.fecha} onChange={e=>set("fecha",e.target.value)}/></FL>
+      </div>
+      <FL label="Descripción"><textarea value={form.descripcion} onChange={e=>set("descripcion",e.target.value)} rows={2}/></FL>
+      <div className="sl2">Repuestos e insumos</div>
+      <div style={{display:"flex",gap:8,marginBottom:10}}>
+        <select value={ar.stockId} onChange={e=>setAr(r=>({...r,stockId:e.target.value}))} style={{flex:2}}><option value="">Seleccionar del stock...</option>{stock.filter(s=>s.stock>0).map(s=><option key={s.id} value={s.id}>{s.nombre} ({s.stock} {s.unidad}) — {clp(s.costoUnit)}</option>)}</select>
+        <input type="number" min={1} value={ar.cantidad} onChange={e=>setAr(r=>({...r,cantidad:parseInt(e.target.value)||1}))} style={{width:68}}/>
+        <button className="bs2" onClick={addRep}>Agregar</button>
+      </div>
+      {form.repuestos.length>0&&(<div className="tw" style={{marginBottom:10}}><table style={{fontSize:13}}><thead><tr><th>Repuesto</th><th style={{textAlign:"right"}}>Cant.</th><th style={{textAlign:"right"}}>Subtotal</th><th></th></tr></thead><tbody>{form.repuestos.map(r=>(<tr key={r.stockId}><td>{r.nombre}</td><td style={{textAlign:"right"}}>{r.cantidad} {r.unidad}</td><td style={{textAlign:"right"}}>{clp(r.cantidad*r.costoUnit)}</td><td style={{textAlign:"center"}}><button onClick={()=>qRep(r.stockId)} className="bd2 bsm">✕</button></td></tr>))}</tbody></table></div>)}
+      <div style={{background:"#f7f9fc",borderRadius:10,padding:"10px 13px",fontSize:13,marginBottom:10}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{color:"#888"}}>Repuestos</span><span>{clp(totRep)}</span></div>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{color:"#888"}}>HH ({form.horasHombre} hrs × {clp(form.valorHH)})</span><span>{clp(totHH)}</span></div>
+        <div style={{display:"flex",justifyContent:"space-between",fontWeight:700,fontSize:15,marginTop:5,paddingTop:5,borderTop:"1px solid #e4e8ef"}}><span>Total neto</span><span style={{color:"#0C2D6B"}}>{clp(totOT)}</span></div>
+      </div>
+      <FL label="Observaciones"><textarea value={form.observaciones} onChange={e=>set("observaciones",e.target.value)} rows={2}/></FL>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:12}}>
+        <button onClick={()=>setShow(false)}>Cancelar</button>
+        <button className="bp" onClick={guardar}>Crear OT y descontar stock</button>
+      </div>
+    </Modal>)}
+  </div>);
+}
+
+// =================== TÉCNICOS HH ===================
+function Tecnicos({ordenes}){
+  const semDias=()=>{const n=new Date(),d=n.getDay(),l=new Date(n);l.setDate(n.getDate()-(d===0?6:d-1));return Array.from({length:6},(_,i)=>{const x=new Date(l);x.setDate(l.getDate()+i);return x.toISOString().slice(0,10);});};
+  const dias=semDias();
+  const chartRefs=TECNICOS.map(()=>useRef(null));
+  const chartInsts=useRef([]);
+  useEffect(()=>{
+    chartInsts.current.forEach(c=>c?.destroy());chartInsts.current=[];
+    TECNICOS.forEach((tec,i)=>{
+      if(!chartRefs[i].current)return;
+      const hhDia=dias.map(d=>ordenes.filter(o=>o.tecnico===tec&&o.fecha===d).reduce((s,o)=>s+(parseFloat(o.horasHombre)||0),0));
+      const c=new Chart(chartRefs[i].current,{type:"bar",data:{labels:["Lun","Mar","Mié","Jue","Vie","Sáb"],datasets:[{label:"HH trabajadas",data:hhDia,backgroundColor:"rgba(30,136,229,.8)",borderRadius:4,borderSkipped:false},{label:"HH disponibles",data:hhDia.map(h=>Math.max(0,8-h)),backgroundColor:"rgba(200,230,255,.5)",borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:true,position:"top",labels:{font:{size:10}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,max:8,grid:{color:"#f0f2f5"},title:{display:true,text:"Hrs/día"}}}}});
+      chartInsts.current.push(c);
+    });
+    return()=>chartInsts.current.forEach(c=>c?.destroy());
+  },[ordenes]);
+  return(<div>
+    <div className="pgt">Gestión de técnicos</div>
+    <div className="pgs">Holgura y utilización de horas hombre</div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:14}}>
+      {TECNICOS.map((tec,i)=>{
+        const u=ordenes.filter(o=>o.tecnico===tec&&dias.includes(o.fecha)).reduce((s,o)=>s+(parseFloat(o.horasHombre)||0),0);
+        const pct=Math.round((u/HH_SEMANA)*100);const clr=pct>=90?"#C62828":pct>=70?"#F57F17":"#1E88E5";
+        return(<div key={tec} className="cw">
+          <div className="ct">{tec}</div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:6}}><span style={{color:"#888"}}>HH usadas</span><span style={{fontWeight:700,color:clr}}>{u.toFixed(1)} / {HH_SEMANA} ({pct}%)</span></div>
+          <div style={{background:"#f0f2f5",borderRadius:8,height:9,marginBottom:12,overflow:"hidden"}}><div style={{width:`${Math.min(100,pct)}%`,height:"100%",background:clr,borderRadius:8}}/></div>
+          <canvas ref={chartRefs[i]} height={150}/>
+        </div>);
+      })}
+    </div>
+  </div>);
+}
+
+// =================== STOCK ===================
+function Stock({stock,setStock,onExport,rolRepuestos}){
+  const [show,setShow]=useState(false);const [search,setSearch]=useState("");const [editId,setEditId]=useState(null);
+  const blank={codigo:"",nombre:"",categoria:"Baterías",stock:0,unidad:"unidad",costoUnit:0};
+  const [form,setForm]=useState(blank);const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const guardar=()=>{if(!form.nombre)return alert("Ingresa nombre");if(editId!=null)setStock(s=>s.map(x=>x.id===editId?{...form,id:editId,stock:parseInt(form.stock),costoUnit:parseInt(form.costoUnit)}:x));else setStock(s=>[...s,{...form,id:Date.now(),stock:parseInt(form.stock),costoUnit:parseInt(form.costoUnit)}]);setShow(false);setEditId(null);setForm(blank);};
+  const editar=item=>{setForm(item);setEditId(item.id);setShow(true);};
+  const adj=(id,d)=>setStock(s=>s.map(x=>x.id===id?{...x,stock:Math.max(0,x.stock+d)}:x));
+  const fil=stock.filter(s=>s.nombre.toLowerCase().includes(search.toLowerCase())||s.codigo?.toLowerCase().includes(search.toLowerCase())||s.categoria?.toLowerCase().includes(search.toLowerCase()));
+  const totVal=stock.reduce((s,i)=>s+i.stock*i.costoUnit,0);
+  return(<div>
+    <div className="pgt">Stock de repuestos</div>
+    <div className="pgs">Inventario y control de insumos{rolRepuestos?" — Solo lectura de precios para este rol":""}</div>
+    <div className="mgrid" style={{gridTemplateColumns:"repeat(3,1fr)"}}>
+      <div className="mt mb2"><div className="ml">Ítems</div><div className="mv">{stock.length}</div></div>
+      <div className="mt mr2"><div className="ml">Bajo stock (≤3)</div><div className="mv">{stock.filter(s=>s.stock<=3).length}</div></div>
+      <div className="mt mg2"><div className="ml">Valor inventario</div><div className="mv" style={{fontSize:16}}>{clp(totVal)}</div></div>
+    </div>
+    <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+      <input placeholder="Buscar..." value={search} onChange={e=>setSearch(e.target.value)} style={{flex:1,minWidth:160}}/>
+      {!rolRepuestos&&<button className="be2 bsm" onClick={onExport}>⬇ Excel</button>}
+      <button className="bp" onClick={()=>{setEditId(null);setForm(blank);setShow(true);}}>+ Agregar ítem</button>
+    </div>
+    <div className="tw"><table><thead><tr><th>Código</th><th>Nombre</th><th>Cat.</th><th style={{textAlign:"right"}}>Stock</th>{!rolRepuestos&&<th style={{textAlign:"right"}}>Costo unit.</th>}{!rolRepuestos&&<th style={{textAlign:"right"}}>Valor total</th>}<th></th></tr></thead>
+    <tbody>{fil.map(item=>(<tr key={item.id} className={item.stock<=2?"lostk":""}>
+      <td style={{color:"#aaa",fontSize:12}}>{item.codigo||"—"}</td>
+      <td style={{fontWeight:500}}>{item.nombre}</td>
+      <td><Badge label={item.categoria} color="blue"/></td>
+      <td style={{textAlign:"right"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:5}}>
+          <button onClick={()=>adj(item.id,-1)} style={{padding:"1px 7px",fontSize:14}}>−</button>
+          <span style={{fontWeight:700,color:item.stock<=2?"#C62828":undefined,minWidth:26,textAlign:"center"}}>{item.stock}</span>
+          <button onClick={()=>adj(item.id,1)} style={{padding:"1px 7px",fontSize:14}}>+</button>
+          <span style={{color:"#bbb",fontSize:11}}>{item.unidad}</span>
+        </div>
+      </td>
+      {!rolRepuestos&&<td style={{textAlign:"right"}}>{clp(item.costoUnit)}</td>}
+      {!rolRepuestos&&<td style={{textAlign:"right",fontWeight:600}}>{clp(item.stock*item.costoUnit)}</td>}
+      <td><button className="bsm" onClick={()=>editar(item)}>Editar</button></td>
+    </tr>))}</tbody></table></div>
+    {show&&(<Modal title={editId?"Editar ítem":"Nuevo ítem"} onClose={()=>setShow(false)}>
+      <div className="g2">
+        <FL label="Código"><input value={form.codigo} onChange={e=>set("codigo",e.target.value)} placeholder="BAT-001"/></FL>
+        <FL label="Categoría"><select value={form.categoria} onChange={e=>set("categoria",e.target.value)}>{CATEGORIAS.map(c=><option key={c}>{c}</option>)}</select></FL>
+        <FL label="Nombre *" full><input value={form.nombre} onChange={e=>set("nombre",e.target.value)}/></FL>
+        <FL label="Unidad"><select value={form.unidad} onChange={e=>set("unidad",e.target.value)}>{["unidad","litro","metro","kg","juego","par"].map(u=><option key={u}>{u}</option>)}</select></FL>
+        <FL label="Stock"><input type="number" min={0} value={form.stock} onChange={e=>set("stock",e.target.value)}/></FL>
+        {!rolRepuestos&&<FL label="Costo unitario ($)"><input type="number" min={0} value={form.costoUnit} onChange={e=>set("costoUnit",e.target.value)}/></FL>}
+      </div>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:12}}>
+        <button onClick={()=>setShow(false)}>Cancelar</button>
+        <button className="bp" onClick={guardar}>Guardar</button>
+      </div>
+    </Modal>)}
+  </div>);
+}
+
+
+// =================== MODAL CONTRATO (Flota) ===================
+function ModalContrato({contrato, onSave, onClose, recepciones}){
+  const esNuevo = !contrato;
+  const blank = {
+    patente:"", vin:"", marca:"", modelo:"", tipo:"", anio:"", color:"",
+    cliente:"", rut:"", email:"", telefono:"", faena:"",
+    financiador:"Sin financiamiento", cuotaMensual:0, fechaInicio:"", fechaFin:"",
+    cuotasTotales:0, cuotasFact:0, estadoContrato:"Activo", notas:"",
+    mantenciones:[]
+  };
+  const [form,setForm] = useState(contrato ? {...contrato} : blank);
+  const [mTab,setMTab] = useState("datos");
+  const [showMant,setShowMant] = useState(false);
+  const blankM = {fecha:hoy(),tipo:TIPOS_MANT[0],lugar:"Taller Voltera",km:"",costo:0,descripcion:""};
+  const [formM,setFormM] = useState(blankM);
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+  const onVeh = v => { if(v) setForm(f=>({...f,patente:v.ppu,vin:v.vin,marca:v.marca,modelo:v.modelo,tipo:v.tipo,anio:v.anio,color:v.color})); };
+
+  const addMant = () => {
+    if(!formM.fecha||!formM.tipo) return;
+    set("mantenciones", [...(form.mantenciones||[]), {...formM, id:Date.now()}]);
+    setFormM(blankM); setShowMant(false);
+  };
+  const delMant = id => set("mantenciones", (form.mantenciones||[]).filter(m=>m.id!==id));
+
+  const pct = form.cuotasTotales > 0 ? Math.round((form.cuotasFact/form.cuotasTotales)*100) : 0;
+  const diasFin = diasRestantes(form.fechaFin);
+
+  return (
+    <Modal title={esNuevo?"Nueva unidad leasing":"Editar contrato"} onClose={onClose} wide>
+      <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>
+        {[["datos","📋 Datos"],["financiero","💰 Financiero"],["mantenciones","🔧 Mantenciones"],["notas","📝 Notas"]].map(([id,l])=>(
+          <button key={id} className={`fl-tab${mTab===id?" active":""}`} onClick={()=>setMTab(id)}>{l}</button>
+        ))}
+      </div>
+
+      {mTab==="datos"&&(<div>
+        <div className="sl2">Buscar en flota Voltera</div>
+        <div className="fl"><VehSearch value={form.patente} onChange={onVeh}/></div>
+        <div className="g2">
+          <FL label="Patente *"><input value={form.patente} onChange={e=>set("patente",e.target.value.toUpperCase())}/></FL>
+          <FL label="VIN"><input value={form.vin} onChange={e=>set("vin",e.target.value)}/></FL>
+          <FL label="Marca"><input value={form.marca} onChange={e=>set("marca",e.target.value)}/></FL>
+          <FL label="Modelo"><input value={form.modelo} onChange={e=>set("modelo",e.target.value)}/></FL>
+          <FL label="Tipo"><input value={form.tipo} onChange={e=>set("tipo",e.target.value)}/></FL>
+          <FL label="Año"><input type="number" value={form.anio} onChange={e=>set("anio",e.target.value)}/></FL>
+          <FL label="Color"><input value={form.color} onChange={e=>set("color",e.target.value)}/></FL>
+          <FL label="Estado contrato"><select value={form.estadoContrato} onChange={e=>set("estadoContrato",e.target.value)}>{ESTADOS_CONTRATO.map(s=><option key={s}>{s}</option>)}</select></FL>
+        </div>
+        <div className="sl2">Cliente y faena</div>
+        <div className="g2">
+          <FL label="Empresa cliente *"><input value={form.cliente} onChange={e=>set("cliente",e.target.value)}/></FL>
+          <FL label="RUT empresa"><input value={form.rut} onChange={e=>set("rut",e.target.value)}/></FL>
+          <FL label="Email"><input type="email" value={form.email} onChange={e=>set("email",e.target.value)}/></FL>
+          <FL label="Teléfono"><input value={form.telefono} onChange={e=>set("telefono",e.target.value)}/></FL>
+          <FL label="Faena / Proyecto" full><input value={form.faena} onChange={e=>set("faena",e.target.value)} placeholder="ej. Minera Escondida — Faena Norte"/></FL>
+        </div>
+      </div>)}
+
+      {mTab==="financiero"&&(<div>
+        <div className="g2">
+          <FL label="Financiador"><select value={form.financiador} onChange={e=>set("financiador",e.target.value)}>{FINANCIADORES.map(f=><option key={f}>{f}</option>)}</select></FL>
+          <FL label="Cuota mensual ($)"><input type="number" value={form.cuotaMensual} onChange={e=>set("cuotaMensual",parseInt(e.target.value)||0)}/></FL>
+          <FL label="Fecha inicio contrato"><input type="date" value={form.fechaInicio} onChange={e=>set("fechaInicio",e.target.value)}/></FL>
+          <FL label="Fecha fin contrato"><input type="date" value={form.fechaFin} onChange={e=>set("fechaFin",e.target.value)}/></FL>
+          <FL label="Cuotas totales"><input type="number" value={form.cuotasTotales} onChange={e=>set("cuotasTotales",parseInt(e.target.value)||0)}/></FL>
+          <FL label="Cuotas facturadas"><input type="number" value={form.cuotasFact} onChange={e=>set("cuotasFact",parseInt(e.target.value)||0)}/></FL>
+        </div>
+        {form.cuotasTotales>0&&(<div style={{background:"#f7f9fc",borderRadius:10,padding:"12px 16px",marginTop:4}}>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:6}}>
+            <span style={{color:"#888"}}>Avance cuotas</span>
+            <span style={{fontWeight:700,color:"#0C2D6B"}}>{form.cuotasFact} / {form.cuotasTotales} ({pct}%)</span>
+          </div>
+          <div className="fl-progress-bar"><div className="fl-progress-fill" style={{width:`${Math.min(100,pct)}%`,background:pct>=100?"#C62828":"#1E88E5"}}/></div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginTop:8,color:"#888"}}>
+            <span>Facturado acum.: <b style={{color:"#0C2D6B"}}>{clp(form.cuotasFact*form.cuotaMensual)}</b></span>
+            <span>Total contrato: <b style={{color:"#0C2D6B"}}>{clp(form.cuotasTotales*form.cuotaMensual)}</b></span>
+          </div>
+          {form.fechaFin&&<div style={{marginTop:8,fontSize:12}}>Días al vencimiento: {diasRestEl(diasFin)}</div>}
+        </div>)}
+      </div>)}
+
+      {mTab==="mantenciones"&&(<div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <span style={{fontSize:13,color:"#666"}}>{(form.mantenciones||[]).length} registros de mantención</span>
+          <button className="bp bsm" onClick={()=>setShowMant(true)}>+ Agregar mantención</button>
+        </div>
+        {showMant&&(<div style={{background:"#f7f9fc",borderRadius:10,padding:14,marginBottom:14}}>
+          <div className="g2">
+            <FL label="Fecha"><input type="date" value={formM.fecha} onChange={e=>setFormM(m=>({...m,fecha:e.target.value}))}/></FL>
+            <FL label="Tipo"><select value={formM.tipo} onChange={e=>setFormM(m=>({...m,tipo:e.target.value}))}>{TIPOS_MANT.map(t=><option key={t}>{t}</option>)}</select></FL>
+            <FL label="Lugar"><input value={formM.lugar} onChange={e=>setFormM(m=>({...m,lugar:e.target.value}))} placeholder="Taller Voltera / Externo"/></FL>
+            <FL label="Km actuales"><input type="number" value={formM.km} onChange={e=>setFormM(m=>({...m,km:e.target.value}))}/></FL>
+            <FL label="Costo neto ($)"><input type="number" value={formM.costo} onChange={e=>setFormM(m=>({...m,costo:parseInt(e.target.value)||0}))}/></FL>
+          </div>
+          <FL label="Descripción / observaciones"><textarea value={formM.descripcion} onChange={e=>setFormM(m=>({...m,descripcion:e.target.value}))} rows={2}/></FL>
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+            <button onClick={()=>setShowMant(false)}>Cancelar</button>
+            <button className="bp" onClick={addMant}>Guardar mantención</button>
+          </div>
+        </div>)}
+        <div className="fl-timeline">
+          {(form.mantenciones||[]).slice().sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(m=>{
+            const esVoltera = m.lugar?.toLowerCase().includes("voltera");
+            return(<div key={m.id} className="fl-tl-item">
+              <div className={`fl-tl-dot${esVoltera?"":" fl-tl-dot-ext"}`}/>
+              <div style={{flex:1}}>
+                <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}>
+                  <div>
+                    <span style={{fontWeight:600}}>{m.tipo}</span>
+                    <span style={{marginLeft:8,fontSize:11,color:esVoltera?"#1565C0":"#7B1FA2",fontWeight:500}}>{esVoltera?"🔵 Voltera":"🟣 Externo"}</span>
+                  </div>
+                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    <span style={{fontSize:11,color:"#aaa"}}>{m.fecha}</span>
+                    {m.costo>0&&<span style={{fontSize:11,fontWeight:600,color:"#0C2D6B"}}>{clp(m.costo)}</span>}
+                    <button onClick={()=>delMant(m.id)} className="bd2 bsm" style={{padding:"1px 5px",fontSize:11}}>✕</button>
+                  </div>
+                </div>
+                <div style={{fontSize:12,color:"#888",marginTop:2}}>{m.lugar}{m.km?` · ${parseInt(m.km).toLocaleString("es-CL")} km`:""}</div>
+                {m.descripcion&&<div style={{fontSize:12,color:"#666",marginTop:2,fontStyle:"italic"}}>{m.descripcion}</div>}
+              </div>
+            </div>);
+          })}
+          {!(form.mantenciones||[]).length&&<p style={{color:"#aaa",fontSize:13}}>Sin registros de mantención.</p>}
+        </div>
+      </div>)}
+
+      {mTab==="notas"&&(<div>
+        <FL label="Notas del contrato / observaciones generales">
+          <textarea value={form.notas} onChange={e=>set("notas",e.target.value)} rows={8} placeholder="Condiciones especiales, acuerdos, histórico de negociación..."/>
+        </FL>
+      </div>)}
+
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:16,paddingTop:12,borderTop:"1px solid #e4e8ef"}}>
+        <button onClick={onClose}>Cancelar</button>
+        <button className="bp" onClick={()=>onSave(form)}>Guardar contrato</button>
+      </div>
+    </Modal>
+  );
+}
+
+// =================== DOC ESTADO DE CUENTA FLOTA ===================
+function DocFlota({contrato, onClose}){
+  const print = ()=>window.print();
+  const pct = contrato.cuotasTotales>0 ? Math.round((contrato.cuotasFact/contrato.cuotasTotales)*100) : 0;
+  const timestamp = new Date().toLocaleString("es-CL",{dateStyle:"full",timeStyle:"short"});
+  const mants = (contrato.mantenciones||[]).slice().sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  return(<Modal title="Estado de cuenta — Leasing operativo" onClose={onClose} wide>
+    <div style={{display:"flex",gap:8,marginBottom:14}} className="no-print">
+      <button className="bprint" onClick={print}><span>🖨</span> Imprimir / Guardar PDF</button>
+      <button onClick={onClose}>Cerrar</button>
+    </div>
+    <div className="print-doc">
+      <div className="pdoc-header">
+        <div><div className="pdoc-title">VOLTERA — LEASING OPERATIVO</div><div className="pdoc-sub">Estado de cuenta y ficha de vehículo</div></div>
+        <div style={{textAlign:"right",fontSize:12}}>
+          <div style={{fontWeight:700,fontSize:15,color:"#0C2D6B"}}>{contrato.patente}</div>
+          <div style={{color:"#555",marginTop:2}}>{timestamp}</div>
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:14}}>
+        <div className="pdoc-section">
+          <div className="pdoc-section-title">Vehículo</div>
+          <div className="pdoc-row"><span className="pdoc-label">Patente:</span><span className="pdoc-val" style={{fontWeight:700,fontSize:15}}>{contrato.patente}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">VIN:</span><span className="pdoc-val">{contrato.vin||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Vehículo:</span><span className="pdoc-val">{contrato.marca} {contrato.modelo} {contrato.tipo}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Año / Color:</span><span className="pdoc-val">{contrato.anio} / {contrato.color||"—"}</span></div>
+        </div>
+        <div className="pdoc-section">
+          <div className="pdoc-section-title">Cliente y faena</div>
+          <div className="pdoc-row"><span className="pdoc-label">Empresa:</span><span className="pdoc-val">{contrato.cliente}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">RUT:</span><span className="pdoc-val">{contrato.rut||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Email:</span><span className="pdoc-val">{contrato.email||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Faena:</span><span className="pdoc-val">{contrato.faena||"—"}</span></div>
+        </div>
+      </div>
+      <div className="pdoc-section">
+        <div className="pdoc-section-title">Condiciones financieras</div>
+        <div className="pdoc-grid">
+          <div className="pdoc-row"><span className="pdoc-label">Financiador:</span><span className="pdoc-val">{contrato.financiador}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Cuota mensual:</span><span className="pdoc-val" style={{fontWeight:700}}>{clp(contrato.cuotaMensual)}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Inicio contrato:</span><span className="pdoc-val">{contrato.fechaInicio||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Fin contrato:</span><span className="pdoc-val">{contrato.fechaFin||"—"}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Cuotas totales:</span><span className="pdoc-val">{contrato.cuotasTotales}</span></div>
+          <div className="pdoc-row"><span className="pdoc-label">Cuotas facturadas:</span><span className="pdoc-val" style={{fontWeight:700,color:"#0C2D6B"}}>{contrato.cuotasFact} ({pct}%)</span></div>
+        </div>
+        <div className="pdoc-total-box" style={{marginTop:10}}>
+          <div className="pdoc-total-line"><span>Total facturado acumulado</span><span style={{fontWeight:700}}>{clp(contrato.cuotasFact*contrato.cuotaMensual)}</span></div>
+          <div className="pdoc-total-line"><span>Cuotas pendientes</span><span>{contrato.cuotasTotales - contrato.cuotasFact}</span></div>
+          <div className="pdoc-grand"><span>Total contrato</span><span>{clp(contrato.cuotasTotales*contrato.cuotaMensual)}</span></div>
+        </div>
+      </div>
+      <div className="pdoc-section">
+        <div className="pdoc-section-title">Historial de mantención ({mants.length} registros)</div>
+        {mants.length>0?(<table style={{fontSize:12,width:"100%",borderCollapse:"collapse"}}>
+          <thead><tr style={{background:"#f7f9fc"}}>
+            <th style={{padding:"5px 8px",fontWeight:600,textAlign:"left"}}>Fecha</th>
+            <th style={{padding:"5px 8px",fontWeight:600,textAlign:"left"}}>Tipo</th>
+            <th style={{padding:"5px 8px",fontWeight:600,textAlign:"left"}}>Lugar</th>
+            <th style={{padding:"5px 8px",fontWeight:600,textAlign:"right"}}>Km</th>
+            <th style={{padding:"5px 8px",fontWeight:600,textAlign:"right"}}>Costo</th>
+          </tr></thead>
+          <tbody>{mants.map(m=>(<tr key={m.id} style={{borderTop:"1px solid #eee"}}>
+            <td style={{padding:"5px 8px"}}>{m.fecha}</td>
+            <td style={{padding:"5px 8px"}}>{m.tipo}</td>
+            <td style={{padding:"5px 8px",color:m.lugar?.toLowerCase().includes("voltera")?"#1565C0":"#7B1FA2"}}>{m.lugar}</td>
+            <td style={{padding:"5px 8px",textAlign:"right"}}>{m.km?`${parseInt(m.km).toLocaleString("es-CL")} km`:"—"}</td>
+            <td style={{padding:"5px 8px",textAlign:"right"}}>{m.costo>0?clp(m.costo):"—"}</td>
+          </tr>))}</tbody>
+        </table>):<p style={{fontSize:12,color:"#888"}}>Sin registros de mantención.</p>}
+      </div>
+      {contrato.notas&&(<div style={{fontSize:12,color:"#666",padding:"8px 12px",background:"#f7f9fc",borderRadius:6}}>Notas: {contrato.notas}</div>)}
+      <div className="pdoc-footer">Voltera S.A. · Leasing Operativo de Vehículos Eléctricos · Documento generado el {timestamp}</div>
+    </div>
+  </Modal>);
+}
+
+// =================== MÓDULO FLOTA LEASING ===================
+function FlotaLeasing({flota, setFlota}){
+  const [show,setShow] = useState(false);
+  const [editContrato,setEditContrato] = useState(null);
+  const [docContrato,setDocContrato] = useState(null);
+  const [search,setSearch] = useState("");
+  const [filtEst,setFiltEst] = useState("Todos");
+  const [vistaDetalle,setVistaDetalle] = useState(null);
+  const chartRef = useRef(null); const chartInst = useRef(null);
+
+  const guardar = (form) => {
+    if(!form.patente||!form.cliente) return alert("Completa patente y cliente");
+    const item = {...form, id: editContrato?.id||Date.now()};
+    if(editContrato) setFlota(f=>f.map(x=>x.id===item.id?item:x));
+    else setFlota(f=>[...f,item]);
+    setShow(false); setEditContrato(null);
+  };
+  const eliminar = id => { if(window.confirm("¿Eliminar este contrato?")) setFlota(f=>f.filter(x=>x.id!==id)); };
+
+  // Métricas globales
+  const activos = flota.filter(f=>f.estadoContrato==="Activo");
+  const ingMensual = activos.reduce((s,f)=>s+(f.cuotaMensual||0),0);
+  const facAcum = flota.reduce((s,f)=>s+(f.cuotasFact||0)*(f.cuotaMensual||0),0);
+  const vencen60 = flota.filter(f=>{ const d=diasRestantes(f.fechaFin); return d!==null&&d>=0&&d<=60; }).length;
+
+  // Filtros
+  const fil = flota.filter(f=>{
+    const txt = search.toLowerCase();
+    const matchSearch = !txt || f.patente?.toLowerCase().includes(txt)||f.cliente?.toLowerCase().includes(txt)||f.faena?.toLowerCase().includes(txt)||f.vin?.toLowerCase().includes(txt);
+    const matchEst = filtEst==="Todos" || f.estadoContrato===filtEst;
+    return matchSearch && matchEst;
+  });
+
+  // Gráfico donut por cliente
+  useEffect(()=>{
+    if(chartInst.current) chartInst.current.destroy();
+    if(!chartRef.current||!activos.length) return;
+    const byCliente = {};
+    activos.forEach(f=>{ byCliente[f.cliente]=(byCliente[f.cliente]||0)+1; });
+    const labels = Object.keys(byCliente);
+    const data = labels.map(l=>byCliente[l]);
+    const colors = ["#1E88E5","#0C2D6B","#2E7D32","#F57F17","#C62828","#7B1FA2","#00695C","#4527A0"];
+    chartInst.current = new Chart(chartRef.current,{type:"doughnut",data:{labels,datasets:[{data,backgroundColor:colors.slice(0,labels.length),borderWidth:2,borderColor:"#fff"}]},options:{plugins:{legend:{position:"right",labels:{font:{size:11},boxWidth:12}}},cutout:"60%"}});
+    return()=>chartInst.current?.destroy();
+  },[flota]);
+
+  const contColor = e => e==="Activo"?"green":e==="Vencido"?"red":e==="Pausado"?"amber":e==="En negociación"?"blue":"gray";
+
+  // Vista detalle de unidad
+  if(vistaDetalle){
+    const c = flota.find(f=>f.id===vistaDetalle);
+    if(!c){setVistaDetalle(null);return null;}
+    const pct = c.cuotasTotales>0?Math.round((c.cuotasFact/c.cuotasTotales)*100):0;
+    const mants=(c.mantenciones||[]).slice().sort((a,b)=>b.fecha.localeCompare(a.fecha));
+    const costoVoltera=mants.filter(m=>m.lugar?.toLowerCase().includes("voltera")).reduce((s,m)=>s+(m.costo||0),0);
+    const costoExt=mants.filter(m=>!m.lugar?.toLowerCase().includes("voltera")).reduce((s,m)=>s+(m.costo||0),0);
+    return(<div>
+      <button onClick={()=>setVistaDetalle(null)} className="bs2 bsm" style={{marginBottom:12}}>← Volver a flota</button>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,flexWrap:"wrap"}}>
+        <div style={{fontSize:28,fontWeight:800,color:"#0C2D6B",letterSpacing:".04em"}}>{c.patente}</div>
+        <Badge label={c.estadoContrato} color={contColor(c.estadoContrato)}/>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:14,fontWeight:500}}>{c.marca} {c.modelo} {c.tipo} {c.anio}</div>
+          <div style={{fontSize:12,color:"#888"}}>{c.cliente} · {c.faena||"Sin faena"}</div>
+        </div>
+        <div style={{display:"flex",gap:6}}>
+          <button className="bprint bsm" onClick={()=>setDocContrato(c)}>🖨 Estado cuenta</button>
+          <button className="bsm" onClick={()=>{setEditContrato(c);setShow(true);}}>Editar</button>
+        </div>
+      </div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
+        <div className="fl-kpi"><div className="fl-kpi-val">{c.cuotasFact}</div><div className="fl-kpi-lbl">Cuotas facturadas</div></div>
+        <div className="fl-kpi"><div className="fl-kpi-val">{c.cuotasTotales}</div><div className="fl-kpi-lbl">Cuotas totales</div></div>
+        <div className={`fl-kpi${vencen60>0?" fl-kpi-warn":""}`}><div className="fl-kpi-val">{diasRestEl(diasRestantes(c.fechaFin))}</div><div className="fl-kpi-lbl">Al vencimiento</div></div>
+        <div className="fl-kpi"><div className="fl-kpi-val">{mants.length}</div><div className="fl-kpi-lbl">Mantenciones</div></div>
+        <div className="fl-kpi"><div className="fl-kpi-val" style={{fontSize:15}}>{clp(costoVoltera+costoExt)}</div><div className="fl-kpi-lbl">Costo total mant.</div></div>
+        <div className="fl-kpi"><div className="fl-kpi-val" style={{fontSize:15}}>{clp(c.cuotasFact*c.cuotaMensual)}</div><div className="fl-kpi-lbl">Facturado acum.</div></div>
+      </div>
+      <div style={{marginBottom:16}}>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#888",marginBottom:4}}>
+          <span>Avance contrato</span><span style={{fontWeight:700,color:"#0C2D6B"}}>{pct}% — {c.cuotasFact}/{c.cuotasTotales} cuotas</span>
+        </div>
+        <div className="fl-progress-bar" style={{height:12}}><div className="fl-progress-fill" style={{width:`${Math.min(100,pct)}%`,background:pct>=100?"#C62828":"#1E88E5"}}/></div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#aaa",marginTop:3}}>
+          <span>{c.fechaInicio||"—"}</span><span>{c.fechaFin||"—"}</span>
+        </div>
+      </div>
+      <div className="cw">
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div className="ct" style={{marginBottom:0}}>Historial de mantención</div>
+          <div style={{display:"flex",gap:8,fontSize:12}}>
+            <span style={{color:"#1565C0"}}>🔵 Voltera {clp(costoVoltera)}</span>
+            <span style={{color:"#7B1FA2"}}>🟣 Externo {clp(costoExt)}</span>
+          </div>
+        </div>
+        <div className="fl-timeline">
+          {mants.map(m=>{
+            const esV=m.lugar?.toLowerCase().includes("voltera");
+            return(<div key={m.id} className="fl-tl-item">
+              <div className={`fl-tl-dot${esV?"":" fl-tl-dot-ext"}`}/>
+              <div style={{flex:1}}>
+                <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}>
+                  <span style={{fontWeight:600}}>{m.tipo} <span style={{fontSize:11,color:esV?"#1565C0":"#7B1FA2",fontWeight:500}}>{esV?"🔵 Voltera":"🟣 Externo"}</span></span>
+                  <div style={{display:"flex",gap:8,fontSize:11,color:"#aaa"}}>
+                    <span>{m.fecha}</span>
+                    {m.costo>0&&<span style={{fontWeight:700,color:"#0C2D6B"}}>{clp(m.costo)}</span>}
+                  </div>
+                </div>
+                <div style={{fontSize:12,color:"#888"}}>{m.lugar}{m.km?` · ${parseInt(m.km).toLocaleString("es-CL")} km`:""}</div>
+                {m.descripcion&&<div style={{fontSize:12,color:"#666",fontStyle:"italic"}}>{m.descripcion}</div>}
+              </div>
+            </div>);
+          })}
+          {!mants.length&&<p style={{color:"#aaa",fontSize:13}}>Sin registros de mantención.</p>}
+        </div>
+      </div>
+      {docContrato&&<DocFlota contrato={docContrato} onClose={()=>setDocContrato(null)}/>}
+    </div>);
+  }
+
+  // Vista lista
+  return(<div>
+    <div className="pgt">Flota — Leasing operativo</div>
+    <div className="pgs">Gestión de contratos, historial de mantención y estado de cuenta por unidad</div>
+    <div className="mgrid" style={{gridTemplateColumns:"repeat(4,1fr)",marginBottom:20}}>
+      <div className="mt mb2"><div className="ml">Unidades activas</div><div className="mv">{activos.length}</div></div>
+      <div className="mt mg2"><div className="ml">Ingreso mensual neto</div><div className="mv" style={{fontSize:15}}>{clp(ingMensual)}</div></div>
+      <div className="mt" style={{borderTop:"3px solid #0C2D6B"}}><div className="ml">Facturado acumulado</div><div className="mv" style={{fontSize:15}}>{clp(facAcum)}</div></div>
+      <div className={`mt ${vencen60>0?"mr2":"mg2"}`}><div className="ml">Vencen en 60 días</div><div className="mv" style={{color:vencen60>0?"#C62828":undefined}}>{vencen60}</div></div>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:16,marginBottom:16,alignItems:"start"}}>
+      <div className="cw" style={{padding:"14px 16px"}}>
+        <div className="ct">Distribución por cliente (unidades activas)</div>
+        <canvas ref={chartRef} height={150}/>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {ESTADOS_CONTRATO.map(e=>{const n=flota.filter(f=>f.estadoContrato===e).length;return(<div key={e} style={{display:"flex",alignItems:"center",gap:8,fontSize:13}}><Badge label={e} color={contColor(e)}/><span style={{color:"#888"}}>{n} unidad{n!==1?"es":""}</span></div>);})}
+      </div>
+    </div>
+    <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+      <input placeholder="Buscar patente, cliente, faena, VIN..." value={search} onChange={e=>setSearch(e.target.value)} style={{flex:1,minWidth:160}}/>
+      <select value={filtEst} onChange={e=>setFiltEst(e.target.value)} style={{width:"auto"}}>
+        <option value="Todos">Todos los estados</option>
+        {ESTADOS_CONTRATO.map(e=><option key={e}>{e}</option>)}
+      </select>
+      <button className="bp" onClick={()=>{setEditContrato(null);setShow(true);}}>+ Nueva unidad</button>
+    </div>
+    {!fil.length&&<p style={{color:"#aaa",fontSize:13}}>Sin contratos registrados.</p>}
+    {fil.map(c=>{
+      const pct=c.cuotasTotales>0?Math.round((c.cuotasFact/c.cuotasTotales)*100):0;
+      const dias=diasRestantes(c.fechaFin);
+      const mants=c.mantenciones||[];
+      const lastM=mants.slice().sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];
+      return(<div key={c.id} className="fl-card">
+        <div className="fl-card-header">
+          <div style={{width:50,height:50,borderRadius:10,background:"#EBF2FF",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:"pointer"}} onClick={()=>setVistaDetalle(c.id)}>
+            <span style={{fontSize:11,fontWeight:800,color:"#0C2D6B"}}>{c.patente?.slice(0,2)||"EV"}</span>
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:2}}>
+              <span className="fl-patente" style={{cursor:"pointer"}} onClick={()=>setVistaDetalle(c.id)}>{c.patente}</span>
+              <Badge label={c.estadoContrato} color={contColor(c.estadoContrato)}/>
+              <Badge label={c.financiador} color="purple"/>
+            </div>
+            <div style={{fontSize:13,color:"#444"}}>{c.marca} {c.modelo} {c.tipo} {c.anio} · {c.color||""}</div>
+            <div style={{fontSize:12,color:"#888"}}>{c.cliente} · <span style={{color:"#1565C0"}}>{c.faena||"Sin faena asignada"}</span></div>
+          </div>
+          <div style={{textAlign:"right",flexShrink:0}}>
+            <div style={{fontWeight:700,fontSize:17,color:"#0C2D6B"}}>{clp(c.cuotaMensual)}<span style={{fontSize:11,fontWeight:400,color:"#888"}}>/mes</span></div>
+            <div style={{fontSize:11,color:"#888",marginTop:2}}>Venc: {diasRestEl(dias)}</div>
+          </div>
+        </div>
+        <div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#aaa",marginBottom:3}}>
+            <span>Cuotas: {c.cuotasFact}/{c.cuotasTotales}</span>
+            <span>{pct}%</span>
+          </div>
+          <div className="fl-progress-bar"><div className="fl-progress-fill" style={{width:`${Math.min(100,pct)}%`,background:pct>=100?"#C62828":"#1E88E5"}}/></div>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10,flexWrap:"wrap",gap:6}}>
+          <div style={{fontSize:11,color:"#aaa"}}>
+            {mants.length} mantención{mants.length!==1?"es":""}
+            {lastM&&<span> · Última: {lastM.fecha} {lastM.lugar?.toLowerCase().includes("voltera")?"🔵":"🟣"}</span>}
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            <button className="bsm bs2" onClick={()=>setVistaDetalle(c.id)}>Ver detalle</button>
+            <button className="bsm bprint" onClick={()=>setDocContrato(c)} style={{fontSize:11}}>🖨</button>
+            <button className="bsm" onClick={()=>{setEditContrato(c);setShow(true);}}>Editar</button>
+            <button className="bsm bd2" onClick={()=>eliminar(c.id)}>Eliminar</button>
+          </div>
+        </div>
+      </div>);
+    })}
+    {show&&<ModalContrato contrato={editContrato} onSave={guardar} onClose={()=>{setShow(false);setEditContrato(null);}} recepciones={[]}/>}
+    {docContrato&&<DocFlota contrato={docContrato} onClose={()=>setDocContrato(null)}/>}
+  </div>);
+}
+
+// =================== LOGIN ===================
+function Login({onLogin}){
+  const [u,setU]=useState("");const [p,setP]=useState("");const [err,setErr]=useState("");
+  const login=()=>{const f=USUARIOS.find(x=>x.user===u.trim()&&x.pass===p);if(f){setErr("");onLogin(f);}else setErr("Usuario o contraseña incorrectos");};
+  return(<div className="lwrap">
+    <div className="lbox">
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:24,justifyContent:"center"}}>
+        <div className="lm">V</div>
+        <div><div style={{fontSize:22,fontWeight:700,color:"#0C2D6B"}}>Voltera</div><div style={{fontSize:13,color:"#888"}}>Taller EV</div></div>
+      </div>
+      {err&&<div className="lerr">⚠ {err}</div>}
+      <div className="fl"><label>Usuario</label><input value={u} onChange={e=>setU(e.target.value)} placeholder="ej. admin" onKeyDown={e=>e.key==="Enter"&&login()}/></div>
+      <div className="fl"><label>Contraseña</label><input type="password" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()}/></div>
+      <button className="bp" onClick={login} style={{width:"100%",marginTop:8,padding:"10px"}}>Ingresar</button>
+      <p style={{fontSize:11,color:"#ccc",textAlign:"center",marginTop:14}}>Solo personal Voltera autorizado</p>
+    </div>
+  </div>);
+}
+
+// =================== APP PRINCIPAL ===================
+function App(){
+  const [user,setUser]=useState(null);
+  const [tab,setTab]=useState(null);
+  const [recepciones,setRecepciones]=useState([]);
+  const [programacion,setProgramacion]=useState([]);
+  const [ordenes,setOrdenes]=useState([]);
+  const [stock,setStock]=useState(STOCK_INI);
+  const [flota,setFlota]=useState([]);
+  const [sync,setSync]=useState("loading");
+  const [lastSync,setLastSync]=useState("");
+  const init=useRef(false);const stT=useRef({});
+
+  // Recuperar sesión
+  useEffect(()=>{try{const s=sessionStorage.getItem("vt_user");if(s){const u=JSON.parse(s);setUser(u);}}catch{};},[]);
+
+  useEffect(()=>{
+    if(!user)return;
+    (async()=>{setSync("loading");const [r,p,o,s,fl]=await Promise.all([sbGet("recepciones"),sbGet("programacion"),sbGet("ordenes"),sbGet("stock"),sbGet("flota")]);if(r)setRecepciones(r);if(p)setProgramacion(p);if(o)setOrdenes(o);if(s)setStock(s);if(fl)setFlota(fl);setSync("ok");setLastSync(new Date().toLocaleTimeString("es-CL"));init.current=true;})();
+  },[user]);
+
+  useEffect(()=>{if(!user)return;const iv=setInterval(async()=>{if(!init.current)return;const [r,p,o,s,fl]=await Promise.all([sbGet("recepciones"),sbGet("programacion"),sbGet("ordenes"),sbGet("stock"),sbGet("flota")]);if(r)setRecepciones(r);if(p)setProgramacion(p);if(o)setOrdenes(o);if(s)setStock(s);if(fl)setFlota(fl);setLastSync(new Date().toLocaleTimeString("es-CL"));},30000);return()=>clearInterval(iv);},[user]);
+
+  const save=useCallback((tabla,data)=>{if(!init.current)return;setSync("saving");clearTimeout(stT.current[tabla]);stT.current[tabla]=setTimeout(async()=>{const ok=await sbSet(tabla,data);setSync(ok?"ok":"error");if(ok)setLastSync(new Date().toLocaleTimeString("es-CL"));},900);},[]);
+  useEffect(()=>{save("recepciones",recepciones);},[recepciones]);
+  useEffect(()=>{save("programacion",programacion);},[programacion]);
+  useEffect(()=>{save("ordenes",ordenes);},[ordenes]);
+  useEffect(()=>{save("stock",stock);},[stock]);
+  useEffect(()=>{save("flota",flota);},[flota]);
+
+  const onLogin=u=>{setUser(u);try{sessionStorage.setItem("vt_user",JSON.stringify(u));}catch{};};
+  const onLogout=()=>{setUser(null);setTab(null);try{sessionStorage.removeItem("vt_user");}catch{};};
+  const doExport=()=>exportarExcel(recepciones,ordenes,stock,programacion);
+
+  if(!user)return <Login onLogin={onLogin}/>;
+
+  const rol=user.rol;
+  const esTecnico=rol==="tecnico";
+  const esRepuestos=rol==="repuestos";
+  const esFlota=rol==="flota";
+  const nombreTec=esTecnico?TECNICOS.find(t=>t.toLowerCase().startsWith(user.nombre.split(" ")[0].toLowerCase()))||user.nombre:null;
+
+  // Definir pestañas según rol
+  const tabs2=[];
+  if(puedeVer(rol,"dashboard"))tabs2.push({id:"dashboard",l:"Dashboard",icon:"📊"});
+  if(puedeVer(rol,"recepciones"))tabs2.push({id:"recepciones",l:"Recepciones",icon:"🚗"});
+  if(puedeVer(rol,"programacion")||esTecnico)tabs2.push({id:"programacion",l:esTecnico?"Mi agenda":"Programación",icon:"📅"});
+  if(puedeVer(rol,"ordenes")||esTecnico)tabs2.push({id:"ordenes",l:esTecnico?"Mis OTs":"Órdenes de Trabajo",icon:"🔧"});
+  if(puedeVer(rol,"tecnicos"))tabs2.push({id:"tecnicos",l:"Técnicos",icon:"👷"});
+  if(puedeVer(rol,"inventario_taller"))tabs2.push({id:"inventario",l:"Inventario Taller",icon:"🕐"});
+  if(puedeVer(rol,"flota"))tabs2.push({id:"flota",l:"Flota / Leasing",icon:"🚐"});
+  if(puedeVer(rol,"stock")||esRepuestos)tabs2.push({id:"stock",l:"Stock",icon:"📦"});
+
+  const tabActivo=tab||tabs2[0]?.id;
+
+  const counts={dashboard:"",flota:flota.length,recepciones:recepciones.length,programacion:esTecnico?programacion.filter(p=>p.tecnico===nombreTec).length:programacion.length,ordenes:esTecnico?ordenes.filter(o=>o.tecnico===nombreTec).length:ordenes.length,tecnicos:TECNICOS.length,inventario:recepciones.filter(r=>r.estado!=="Entregado").length,stock:stock.length};
+  const sc={ok:{cls:"sp-ok",dot:"dok",msg:`Sync ${lastSync}`},saving:{cls:"sp-sv",dot:"dsv",msg:"Guardando..."},error:{cls:"sp-er",dot:"der",msg:"Sin conexión"},loading:{cls:"sp-sv",dot:"dsv",msg:"Cargando..."}}[sync]||{};
+
+  return(<div>
+    <div className="hdr">
+      <div style={{display:"flex",alignItems:"center",gap:12}}>
+        <div className="lm">V</div>
+        <div><div className="lt">Voltera</div><div className="ls">Taller EV</div></div>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <div className={`sp ${sc.cls}`}><span className={`dot ${sc.dot}`}/>{sc.msg}</div>
+        <Badge label={user.nombre} color="blue"/>
+        <Badge label={rol} color={rol==="admin"?"purple":rol==="tecnico"?"amber":"gray"}/>
+        <button onClick={onLogout} style={{fontSize:12,padding:"4px 10px",background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.2)",color:"#fff",borderRadius:7}}>Salir</button>
+        {!esRepuestos&&!esTecnico&&<button className="be2 bsm" onClick={doExport} style={{fontSize:12}}>⬇ Excel</button>}
+      </div>
+    </div>
+    <div className="sb">
+      <div className="nsec">Menú</div>
+      {tabs2.map(t=>(<div key={t.id} className={`ni${tabActivo===t.id?" active":""}`} onClick={()=>setTab(t.id)}>
+        <span style={{fontSize:15}}>{t.icon}</span>{t.l}
+        {counts[t.id]!==""&&counts[t.id]!==undefined&&<span className="nc">{counts[t.id]}</span>}
+      </div>))}
+      <div className="nsec" style={{marginTop:16}}>Estado</div>
+      <div style={{padding:"4px 16px"}}>
+        <div style={{fontSize:12,color:"#666",marginBottom:2}}>OTs en curso</div>
+        <div style={{fontSize:20,fontWeight:700,color:"#0C2D6B"}}>{ordenes.filter(o=>o.estado==="Abierta"||o.estado==="En proceso").length}</div>
+      </div>
+      <div style={{padding:"4px 16px"}}>
+        <div style={{fontSize:12,color:"#666",marginBottom:2}}>Alerta stock</div>
+        <div style={{fontSize:20,fontWeight:700,color:stock.filter(s=>s.stock<=3).length>0?"#C62828":"#0C2D6B"}}>{stock.filter(s=>s.stock<=3).length}</div>
+      </div>
+    </div>
+    <div className="main">
+      {tabActivo==="dashboard"&&<Dashboard recepciones={recepciones} ordenes={ordenes} stock={stock}/>}
+      {tabActivo==="recepciones"&&<Recepciones recepciones={recepciones} setRecepciones={setRecepciones} onExport={doExport}/>}
+      {tabActivo==="programacion"&&<Programacion recepciones={recepciones} programacion={programacion} setProgramacion={setProgramacion} userTecnico={esTecnico?nombreTec:null}/>}
+      {tabActivo==="ordenes"&&<OrdenesTrabajo recepciones={recepciones} stock={stock} setStock={setStock} ordenes={ordenes} setOrdenes={setOrdenes} onExport={doExport} userTecnico={esTecnico?nombreTec:null}/>}
+      {tabActivo==="tecnicos"&&<Tecnicos ordenes={ordenes}/>}
+      {tabActivo==="inventario"&&<InventarioTaller recepciones={recepciones}/>}
+      {tabActivo==="flota"&&<FlotaLeasing flota={flota} setFlota={setFlota}/>}
+      {tabActivo==="stock"&&<Stock stock={stock} setStock={setStock} onExport={doExport} rolRepuestos={esRepuestos}/>}
+    </div>
+  </div>);
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
